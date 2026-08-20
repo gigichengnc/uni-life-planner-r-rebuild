@@ -58,6 +58,7 @@ The original implementation contains several useful learning examples:
 - human "matchness" judgments described as accuracy without a formal evaluation protocol;
 - duplicated sentiment-analysis code;
 - an undeclared `RColorBrewer` dependency despite calling `brewer.pal()`;
+- broad regex activity matching against LDA top words;
 - a single monolithic script mixing package installation, data loading, modelling, visualization, and recommendation logic;
 - privacy/copyright risks if original student reflections are published directly.
 
@@ -83,7 +84,8 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 │   ├── statistical-redesign.md
 │   ├── classification-baseline.md
 │   ├── topic-exploration.md
-│   └── sentiment-analysis.md
+│   ├── sentiment-analysis.md
+│   └── recommendation-engine.md
 ├── data/
 │   ├── README.md
 │   ├── sample/
@@ -103,7 +105,8 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 │   ├── 03_classify_interests.R
 │   ├── 04_evaluate.R
 │   ├── 05_explore_topics.R
-│   └── 06_sentiment.R
+│   ├── 06_sentiment.R
+│   └── 07_recommend_events.R
 ├── output/
 │   ├── figures/
 │   └── examples/
@@ -111,7 +114,8 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
     ├── smoke_test_phase2.R
     ├── smoke_test_classification.R
     ├── smoke_test_topics.R
-    └── smoke_test_sentiment.R
+    ├── smoke_test_sentiment.R
+    └── smoke_test_recommendations.R
 ```
 
 ## Status
@@ -128,16 +132,16 @@ The corrected implementation now includes:
 - synthetic public-safe reflection and activity data;
 - reusable data loading functions;
 - preprocessing separated from modelling;
-- explicit token and term-count outputs;
 - a transparent dictionary classifier for the five predefined interest categories;
 - explicit ambiguous and unclassified outcomes;
 - evaluation against labelled synthetic fixtures;
 - optional corpus-level LDA topic exploration kept separate from category classification;
-- NRC sentiment as a separate descriptive layer with raw counts and length-normalised rates;
-- smoke tests for foundation, classification, topic exploration, and sentiment;
+- NRC sentiment as a separate descriptive layer;
+- an explainable activity recommender with evidence thresholds and `no_recommendation` outcomes;
+- smoke tests for foundation, classification, topic exploration, sentiment, and recommendation;
 - a GitHub Actions workflow that runs the R smoke tests on the reconstruction branch and pull requests to `main`.
 
-The loading, preprocessing, classification, and evaluation modules use base R. Exploratory LDA intentionally adds the `topicmodels` dependency, while NRC sentiment is isolated behind the `syuzhet` dependency.
+The loading, preprocessing, classification, evaluation, and recommendation modules use base R. Exploratory LDA intentionally adds the `topicmodels` dependency, while NRC sentiment is isolated behind the `syuzhet` dependency.
 
 ## What changed methodologically?
 
@@ -155,15 +159,23 @@ LDA is now fitted once across the corpus and its outputs remain anonymously labe
 
 NRC sentiment is now a separate lexical description. It reports emotion/polarity hits and rates per 100 words, but does not determine a student's interest category, infer personality, or label LDA topics.
 
-See [`docs/classification-baseline.md`](docs/classification-baseline.md), [`docs/topic-exploration.md`](docs/topic-exploration.md), and [`docs/sentiment-analysis.md`](docs/sentiment-analysis.md).
+### Activity recommendation
+
+The Year 1 recommender broadly matched LDA top words against activity announcements. Phase 2 instead consumes the explicit classification result and activity metadata.
+
+A recommendation is produced only when classification evidence passes minimum score and margin thresholds. Candidate activities are restricted to the predicted category and ranked using shared category evidence. The output exposes the score, matched evidence terms, and reason. Weak evidence can produce `no_recommendation` rather than a forced suggestion.
+
+Sentiment scores and LDA topic numbers are intentionally excluded from recommendation ranking.
+
+See [`docs/classification-baseline.md`](docs/classification-baseline.md), [`docs/topic-exploration.md`](docs/topic-exploration.md), [`docs/sentiment-analysis.md`](docs/sentiment-analysis.md), and [`docs/recommendation-engine.md`](docs/recommendation-engine.md).
 
 ## Evaluation warning
 
-The five current reflection files are synthetic fixtures written specifically for this reconstruction. Their `intended_theme` labels are test labels, not independently validated real-world ground truth.
+The five current reflection files and ten current activities are synthetic fixtures written specifically for this reconstruction. Their labels and pairings are test fixtures, not independently validated real-world ground truth.
 
-Therefore, a perfect classification result on these fixtures would verify the implementation only. Likewise, LDA output from five synthetic documents is an architectural demonstration, not evidence of stable latent topics. NRC output is a lexicon-based description and should not be interpreted as a validated measure of a student's true emotional state.
+Therefore, perfect results on these fixtures verify implementation behaviour only. They do not establish real-world classification accuracy, stable latent topics, psychological sentiment validity, or recommendation quality.
 
-Meaningful performance or substantive claims require substantially better evaluation data.
+Meaningful performance claims require held-out data and independent evaluation.
 
 ## Data policy
 
@@ -178,6 +190,7 @@ Rscript tests/smoke_test_phase2.R
 Rscript tests/smoke_test_classification.R
 Rscript tests/smoke_test_topics.R
 Rscript tests/smoke_test_sentiment.R
+Rscript tests/smoke_test_recommendations.R
 ```
 
 The optional analytical tests require:
@@ -192,19 +205,17 @@ Runtime results should be read from the repository's GitHub Actions checks rathe
 
 ## Next methodological phase
 
-The next major module is activity recommendation. It should avoid the Year 1 broad `grepl()` match against top LDA words.
+The original reflection-to-recommendation path is now reconstructed. The next module can focus on **interpretable visualisation** rather than adding more hidden modelling assumptions.
 
-The redesigned recommender should instead use explicit, inspectable evidence such as:
+`08_visualise.R` should turn the existing transparent outputs into plots such as:
 
-- the classified interest category;
-- category scores and matched terms;
-- activity metadata in the same category/feature schema;
-- explicit ranking scores and explanations;
-- an `uncertain` or no-recommendation outcome when evidence is weak.
+- per-category classifier scores;
+- classification margins and uncertain cases;
+- neutral LDA topic-term summaries;
+- NRC sentiment rates;
+- recommendation score components and evidence terms.
 
-Sentiment should remain descriptive and should not silently drive recommendations.
-
-After the recommender, the remaining work can add interpretable visualisation and later a genuinely held-out labelled evaluation set with a larger corpus.
+A later phase should add a genuinely held-out labelled evaluation set and a larger corpus before making substantive performance claims.
 
 ## Historical note
 
