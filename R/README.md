@@ -16,6 +16,7 @@ The corrected implementation lives here and remains separate from `../original/`
 09_evaluate_challenge.R
 10_analyse_failures.R
 11_controlled_experiments.R
+12_validate_external_labels.R
 ```
 
 ### `01_load_data.R`
@@ -52,33 +53,35 @@ Renders interpretable PNG outputs for classification evidence, topic terms, sent
 
 ### `09_evaluate_challenge.R`
 
-Evaluates the unchanged transparent classifier on `data/evaluation/`, benchmark version `v1-locked-2026-08-20`. It checks expected status, intended theme, expected top/tied categories, and results by challenge type. It intentionally does not require a perfect score.
-
-See [`../docs/evaluation-challenge.md`](../docs/evaluation-challenge.md).
+Evaluates the unchanged transparent classifier on `data/evaluation/`, benchmark version `v1-locked-2026-08-20`. It intentionally does not require a perfect score.
 
 ### `10_analyse_failures.R`
 
-Adds Phase 4 diagnosis without changing the classifier or locked benchmark. It assigns incorrect cases a documented diagnostic hypothesis, groups failures into broader families, and creates an improvement queue without automatically changing model code.
-
-See [`../docs/failure-analysis.md`](../docs/failure-analysis.md).
+Adds Phase 4 diagnosis without changing the classifier or locked benchmark. It assigns incorrect cases a documented diagnostic hypothesis and creates an investigation queue.
 
 ### `11_controlled_experiments.R`
 
-Runs Phase 5 controlled validation experiments without replacing the baseline classifier.
+Runs Phase 5 controlled validation experiments. Variants A/B/C compare the current baseline, local negation handling, and pre-declared ambiguity/abstention thresholds without automatically replacing the reference baseline.
 
-Three pre-declared variants are compared:
+The model-decision review retains Variant A because B produces no paired improvement and C produces one improvement plus one regression on the validation benchmark.
 
-```text
-A  current dictionary baseline
-B  A + local negation handling
-C  B + min_top_score = 2 + ambiguity_margin = 1
-```
+### `12_validate_external_labels.R`
 
-Variant A is checked against `03_classify_interests.R` so the experiment cannot silently redefine the baseline. Variant B ignores dictionary terms that fall within a three-token local negation window after `not`, `no`, `never`, or `without`. Variant C additionally allows weak-evidence abstention and near-tie ambiguity.
+Adds Phase 6 validation utilities for a future independently labelled unseen evaluation set.
 
-The experiment produces paired before/after case comparisons, including improvements **and regressions**. It does not perform threshold search, does not consume benchmark labels during prediction, and never auto-promotes a variant.
+It validates:
 
-Because the Phase 3 benchmark has already been inspected during failure analysis, Phase 5 explicitly treats it as **validation data**. See [`../docs/controlled-experiments.md`](../docs/controlled-experiments.md).
+- external-test registry structure and `first_seen_after_model_freeze` flags;
+- at least two independent first-round annotators per reflection;
+- `classified`, `ambiguous`, and `unclassified` label coherence;
+- primary and secondary category sets;
+- confidence values and written rationales;
+- `labelled_without_model_output = TRUE`;
+- frozen adjudicated labels;
+- exact first-round agreement and an adjudication queue;
+- matching reflection IDs across registry, annotations, and final labels.
+
+The validator checks recorded process consistency only. It cannot prove that data were truly unseen, that annotators were independent, or that publication rights exist. See [`../docs/external-evaluation-protocol.md`](../docs/external-evaluation-protocol.md).
 
 ## Quick checks
 
@@ -92,9 +95,10 @@ Rscript tests/smoke_test_visualise.R
 Rscript tests/smoke_test_challenge.R
 Rscript tests/smoke_test_failure_analysis.R
 Rscript tests/smoke_test_experiments.R
+Rscript tests/smoke_test_external_labels.R
 ```
 
-The Phase 3–5 tests verify benchmark loading, evaluation, diagnosis, experiment wiring, and reporting structure. They do **not** require a particular accuracy or require an experiment to beat the baseline.
+The Phase 3–6 tests verify benchmark loading, evaluation, diagnosis, experiment wiring, and labelling-protocol validation. They do **not** establish external accuracy.
 
 Optional topic/sentiment modules require:
 
@@ -104,7 +108,7 @@ install.packages(c("topicmodels", "syuzhet"))
 
 GitHub Actions installs those dependencies automatically.
 
-## Generate derived outputs
+## Generate or validate derived outputs
 
 Sample figures:
 
@@ -130,7 +134,14 @@ Controlled experiment tables:
 Rscript scripts/run_baseline_experiments.R
 ```
 
-Generated figures and CSV outputs remain ignored by Git and are uploaded as CI artifacts when available.
+When a real external dataset exists locally, validate its registry, independent annotations, and frozen adjudicated labels with:
+
+```bash
+Rscript scripts/validate_external_evaluation.R \
+  data/external-evaluation/private/dataset-register.csv \
+  data/external-evaluation/private/annotations.csv \
+  data/external-evaluation/private/adjudicated-labels.csv
+```
 
 ## Methodological rules
 
@@ -140,10 +151,10 @@ Generated figures and CSV outputs remain ignored by Git and are uploaded as CI a
 
 > **recommendation requires explicit classification evidence; weak evidence may produce no recommendation.**
 
-> **visualisation displays existing outputs; it does not create new evidence.**
-
 > **a benchmark is not held out anymore once you tune repeatedly against it.**
 
 > **failure analysis should diagnose the baseline before changing it.**
 
 > **an experimental variant is not promoted merely because its validation score is higher.**
+
+> **external labels must be created before annotators see model predictions and frozen before evaluation.**
