@@ -129,3 +129,53 @@ load_sample_data <- function(root = find_project_root()) {
     manifest = load_manifest(root = root)
   )
 }
+
+load_evaluation_labels <- function(
+  root = find_project_root(),
+  path = file.path("data", "evaluation", "labels.csv")
+) {
+  full_path <- file.path(root, path)
+
+  if (!file.exists(full_path)) {
+    stop("Evaluation label file does not exist: ", full_path)
+  }
+
+  labels <- read.csv(
+    full_path,
+    stringsAsFactors = FALSE,
+    fileEncoding = "UTF-8",
+    check.names = FALSE
+  )
+
+  required <- c(
+    "reflection_id", "file", "benchmark_version", "expected_status",
+    "intended_theme", "expected_categories", "challenge_type", "label_rationale"
+  )
+  missing <- setdiff(required, names(labels))
+
+  if (length(missing) > 0L) {
+    stop("Evaluation labels are missing required columns: ", paste(missing, collapse = ", "))
+  }
+
+  labels
+}
+
+load_evaluation_data <- function(root = find_project_root()) {
+  reflections <- load_reflections(
+    root = root,
+    directory = file.path("data", "evaluation", "reflections")
+  )
+  labels <- load_evaluation_labels(root = root)
+
+  missing_text <- setdiff(labels$reflection_id, reflections$reflection_id)
+  missing_labels <- setdiff(reflections$reflection_id, labels$reflection_id)
+  if (length(missing_text) > 0L || length(missing_labels) > 0L) {
+    stop(
+      "Evaluation reflection/label IDs do not match. Missing text: ",
+      paste(missing_text, collapse = ", "),
+      "; missing labels: ", paste(missing_labels, collapse = ", ")
+    )
+  }
+
+  list(reflections = reflections, labels = labels)
+}
