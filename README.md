@@ -1,15 +1,18 @@
-# From Words to Programs: R-Based Student Events Feedback Analysis
+# From Words to Programs: R-Based Student Reflection Analytics
 
-A retrospective reconstruction of a Year 1 course project from **STAT 2610SEF Data Analytics with Applications (2025 Spring)**.
+A retrospective reconstruction and redesign of a Year 1 course project from **STAT 2610SEF Data Analytics with Applications (2025 Spring)**.
 
 The original project, **UNI LIFE PLANNER**, explored whether R-based text analytics could turn student reflections on university activities and competitions into useful signals about interests, emotions, and possible future activities.
 
-This repository intentionally preserves both the ambition and the problems of the original implementation. The goal is not to pretend the Year 1 code was production-ready. Instead, it documents:
+This repository preserves the original attempt while rebuilding it as a more reproducible and statistically defensible R project. The intended repository name is **`uni-life-planner-r-rebuild`**.
 
-1. what the original project attempted;
+The project documents:
+
+1. what the original Year 1 implementation attempted;
 2. how the original R pipeline worked;
 3. where the statistical and programming problems occurred;
-4. how the project could be redesigned today without erasing the original work.
+4. how those problems can be redesigned without erasing the historical work;
+5. how the corrected pipeline can be tested and evaluated explicitly.
 
 ## Original question
 
@@ -44,9 +47,9 @@ Keyword matching against activity announcements
 Suggested student activities
 ```
 
-## Why this repository is called `Problematic-Code-Uni`
+## Why rebuild it?
 
-The original code contains several useful learning examples:
+The original implementation contains several useful learning examples:
 
 - hard-coded Windows file paths;
 - an unsupervised LDA topic index treated as if it were a predefined category label;
@@ -60,12 +63,17 @@ The original code contains several useful learning examples:
 
 These problems are documented in [`docs/known-problems.md`](docs/known-problems.md).
 
+The purpose of the rebuild is not to hide those mistakes. It is to make the improvement inspectable: **historical implementation → diagnosis → redesign → tested implementation**.
+
 ## Repository structure
 
 ```text
 .
 ├── README.md
 ├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── r-tests.yml
 ├── original/
 │   ├── README.md
 │   └── reconstructed_year1_code.R
@@ -117,14 +125,15 @@ The corrected implementation now includes:
 - explicit token and term-count outputs;
 - a transparent dictionary classifier for the five predefined interest categories;
 - explicit ambiguous and unclassified outcomes;
-- evaluation against the labelled synthetic fixtures;
-- smoke tests for the foundation and classification pipeline.
+- evaluation against labelled synthetic fixtures;
+- smoke tests for the foundation and classification pipeline;
+- a GitHub Actions workflow that runs the R smoke tests on the reconstruction branch and pull requests to `main`.
 
 The corrected modules currently use base R only, making the transformations and scoring rules easy to inspect.
 
 ## What changed methodologically?
 
-The key correction is that **topic discovery and category classification are now separate tasks**.
+The key correction is that **topic discovery and category classification are separate tasks**.
 
 The Year 1 logic effectively treated an LDA topic number as if it were the same thing as a predefined category number. Phase 2 instead uses an explicit category dictionary as a simple classification baseline. Every score and matched term can be inspected.
 
@@ -149,7 +158,7 @@ Rscript tests/smoke_test_phase2.R
 Rscript tests/smoke_test_classification.R
 ```
 
-This environment has not executed those R tests, so the repository does not claim runtime verification yet.
+CI is configured through `.github/workflows/r-tests.yml`. Runtime results should be read from the repository's GitHub Actions checks rather than inferred from the presence of the workflow file alone.
 
 ## Next methodological phase
 
