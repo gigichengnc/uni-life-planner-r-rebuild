@@ -4,9 +4,7 @@ This repository is public-facing, so the reconstruction uses synthetic data by d
 
 ## `sample/`
 
-Public-safe synthetic examples used to demonstrate and test the corrected pipeline.
-
-Current Phase 2 foundation data:
+Public-safe synthetic examples used to demonstrate and test the corrected Phase 2 pipeline.
 
 ```text
 sample/
@@ -22,9 +20,29 @@ sample/
 
 The five reflections were newly written for this repository. They are **not** copied or paraphrased from the original student reflection journals.
 
-`manifest.csv` gives each synthetic reflection an intended test theme corresponding to the five-category schema preserved from the Year 1 project. These labels are test fixtures, not evidence that the original classification method was accurate.
+`manifest.csv` gives each sample an intended test theme. These deliberately clear fixtures verify pipeline behaviour; they are not evidence of real-world accuracy.
 
-`activities.csv` is also synthetic. It provides ten example activities, two for each category, so future recommendation logic can be tested without publishing historical announcements.
+`activities.csv` is also synthetic and provides ten example activities, two for each preserved category.
+
+## `evaluation/`
+
+A harder synthetic challenge benchmark used in Phase 3.
+
+```text
+evaluation/
+├── README.md
+├── labels.csv
+└── reflections/
+    ├── eval_01.txt
+    ├── ...
+    └── eval_12.txt
+```
+
+Benchmark version `v1-locked-2026-08-20` contains paraphrase, negation, mixed-domain, off-domain, and context-over-keyword cases. It was designed to expose weaknesses in the transparent dictionary baseline.
+
+This benchmark is **synthetic and challenge-oriented, not independently collected or externally annotated**. It must not be presented as an unbiased held-out real-world test set.
+
+After creation, v1 is treated as locked: do not rewrite cases merely to improve classifier results. If future model development repeatedly uses these results, v1 becomes validation data and a new unseen test set is required for fresh performance claims. See [`evaluation/README.md`](evaluation/README.md).
 
 ## `private/`
 
