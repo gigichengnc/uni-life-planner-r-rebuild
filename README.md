@@ -82,7 +82,8 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 │   ├── known-problems.md
 │   ├── statistical-redesign.md
 │   ├── classification-baseline.md
-│   └── topic-exploration.md
+│   ├── topic-exploration.md
+│   └── sentiment-analysis.md
 ├── data/
 │   ├── README.md
 │   ├── sample/
@@ -101,14 +102,16 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 │   ├── 02_preprocess.R
 │   ├── 03_classify_interests.R
 │   ├── 04_evaluate.R
-│   └── 05_explore_topics.R
+│   ├── 05_explore_topics.R
+│   └── 06_sentiment.R
 ├── output/
 │   ├── figures/
 │   └── examples/
 └── tests/
     ├── smoke_test_phase2.R
     ├── smoke_test_classification.R
-    └── smoke_test_topics.R
+    ├── smoke_test_topics.R
+    └── smoke_test_sentiment.R
 ```
 
 ## Status
@@ -130,26 +133,37 @@ The corrected implementation now includes:
 - explicit ambiguous and unclassified outcomes;
 - evaluation against labelled synthetic fixtures;
 - optional corpus-level LDA topic exploration kept separate from category classification;
-- smoke tests for the foundation, classification pipeline, and topic-exploration pipeline;
+- NRC sentiment as a separate descriptive layer with raw counts and length-normalised rates;
+- smoke tests for foundation, classification, topic exploration, and sentiment;
 - a GitHub Actions workflow that runs the R smoke tests on the reconstruction branch and pull requests to `main`.
 
-The loading, preprocessing, classification, and evaluation modules use base R. Exploratory LDA intentionally adds the `topicmodels` dependency and is isolated in its own module.
+The loading, preprocessing, classification, and evaluation modules use base R. Exploratory LDA intentionally adds the `topicmodels` dependency, while NRC sentiment is isolated behind the `syuzhet` dependency.
 
 ## What changed methodologically?
 
-The key correction is that **topic discovery and category classification are separate tasks**.
+The reconstruction separates analytical tasks that the Year 1 implementation mixed together.
+
+### Category classification
 
 The Year 1 logic effectively treated an LDA topic number as if it were the same thing as a predefined category number. Phase 2 instead uses an explicit category dictionary as a simple classification baseline. Every score and matched term can be inspected.
 
+### Topic discovery
+
 LDA is now fitted once across the corpus and its outputs remain anonymously labelled `Topic 1`, `Topic 2`, and so on. Those topic indices are not automatically converted into the five predefined interest categories.
 
-See [`docs/classification-baseline.md`](docs/classification-baseline.md) and [`docs/topic-exploration.md`](docs/topic-exploration.md).
+### Sentiment description
+
+NRC sentiment is now a separate lexical description. It reports emotion/polarity hits and rates per 100 words, but does not determine a student's interest category, infer personality, or label LDA topics.
+
+See [`docs/classification-baseline.md`](docs/classification-baseline.md), [`docs/topic-exploration.md`](docs/topic-exploration.md), and [`docs/sentiment-analysis.md`](docs/sentiment-analysis.md).
 
 ## Evaluation warning
 
 The five current reflection files are synthetic fixtures written specifically for this reconstruction. Their `intended_theme` labels are test labels, not independently validated real-world ground truth.
 
-Therefore, a perfect classification result on these fixtures would verify the implementation only. Likewise, LDA output from five synthetic documents is an architectural demonstration, not evidence of stable latent topics. Meaningful performance or topic claims require substantially better evaluation data.
+Therefore, a perfect classification result on these fixtures would verify the implementation only. Likewise, LDA output from five synthetic documents is an architectural demonstration, not evidence of stable latent topics. NRC output is a lexicon-based description and should not be interpreted as a validated measure of a student's true emotional state.
+
+Meaningful performance or substantive claims require substantially better evaluation data.
 
 ## Data policy
 
@@ -163,20 +177,34 @@ On a machine with R installed:
 Rscript tests/smoke_test_phase2.R
 Rscript tests/smoke_test_classification.R
 Rscript tests/smoke_test_topics.R
+Rscript tests/smoke_test_sentiment.R
 ```
 
-The topic test additionally requires the `topicmodels` package. CI installs it automatically through `.github/workflows/r-tests.yml`.
+The optional analytical tests require:
+
+```r
+install.packages(c("topicmodels", "syuzhet"))
+```
+
+CI installs these packages automatically through `.github/workflows/r-tests.yml`.
 
 Runtime results should be read from the repository's GitHub Actions checks rather than inferred from the presence of the workflow file alone.
 
 ## Next methodological phase
 
-The next work can add the remaining analytical modules without mixing their assumptions:
+The next major module is activity recommendation. It should avoid the Year 1 broad `grepl()` match against top LDA words.
 
-- sentiment analysis as a separate descriptive task;
-- activity recommendation using explicit category/term scores;
-- visualisation of interpretable outputs;
-- later, a genuinely held-out labelled evaluation set and a larger corpus for more defensible modelling.
+The redesigned recommender should instead use explicit, inspectable evidence such as:
+
+- the classified interest category;
+- category scores and matched terms;
+- activity metadata in the same category/feature schema;
+- explicit ranking scores and explanations;
+- an `uncertain` or no-recommendation outcome when evidence is weak.
+
+Sentiment should remain descriptive and should not silently drive recommendations.
+
+After the recommender, the remaining work can add interpretable visualisation and later a genuinely held-out labelled evaluation set with a larger corpus.
 
 ## Historical note
 
