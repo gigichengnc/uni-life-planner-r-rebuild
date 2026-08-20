@@ -1,38 +1,32 @@
 # From Words to Programs: R-Based Student Reflection Analytics
 
-A retrospective reconstruction and redesign of a Year 1 course project from **STAT 2610SEF Data Analytics with Applications (2025 Spring)**.
+A retrospective reconstruction and redesign of a Year 1 project from **STAT 2610SEF Data Analytics with Applications (2025 Spring)**.
 
-The original project, **UNI LIFE PLANNER**, explored whether R-based text analytics could turn student reflections on university activities and competitions into useful signals about interests, emotions, and possible future activities.
+The original **UNI LIFE PLANNER** asked a simple question: can student reflections on university activities be processed in R to identify interests, describe sentiment, and suggest future activities?
 
-This repository preserves the original attempt while rebuilding it as a more reproducible and statistically defensible R project. The rebuilt repository is **`uni-life-planner-r-rebuild`**.
+This repository preserves that original attempt under `original/` and rebuilds it as a modular, reproducible, and more statistically defensible R project.
 
-The project now documents the complete learning path:
+## Portfolio snapshot
 
-```text
-Year 1 implementation
-        ↓
-problem diagnosis
-        ↓
-methodological redesign
-        ↓
-modular rebuild
-        ↓
-tests + interpretable outputs
-        ↓
-locked challenge benchmark
-        ↓
-failure analysis
-        ↓
-controlled baseline experiments
-        ↓
-model decision review
-        ↓
-external-evaluation protocol
-```
+| Item | Current project state |
+| --- | --- |
+| Original problem | Analyse student activity reflections and turn text into useful signals |
+| Historical baseline | Frozen under `original/` rather than silently rewritten |
+| Rebuilt pipeline | Loading, preprocessing, classification, topic exploration, sentiment, recommendation, visualisation, and evaluation are separate modules |
+| Reference classifier | Transparent five-category dictionary baseline with `Ambiguous` and `Unclassified` outcomes |
+| Validation | Clear synthetic fixtures plus a harder locked 12-case synthetic challenge benchmark |
+| Model-development decision | Retain Variant A; experimental negation/threshold variants did not show a net validation improvement |
+| Reproducibility | GitHub Actions runs the full smoke-test and reporting pipeline on a clean Ubuntu/R environment |
+| External accuracy claim | **Not made**; a new independently labelled unseen dataset is still required |
+| Next evidence gate | Collect, independently label, adjudicate, freeze, and evaluate genuinely unseen reflections |
 
-## Original question
+For the clearest summary of how the project changed, see [`docs/before-vs-after.md`](docs/before-vs-after.md).
 
-Can student event reflections be processed in R to identify themes, sentiment, and possible activity recommendations?
+## The original question
+
+> Can student event reflections be processed in R to identify themes, sentiment, and possible activity recommendations?
+
+The question remains useful. The main change is **how the evidence is produced and interpreted**.
 
 ## Why rebuild it?
 
@@ -42,14 +36,32 @@ The Year 1 implementation contains several useful learning examples:
 - an unsupervised LDA topic index treated as if it were a predefined category label;
 - inconsistent descriptions of the number of categories/topics;
 - LDA fitted separately to very small individual documents;
-- human "matchness" judgments described as accuracy without a formal evaluation protocol;
+- human “matchness” judgments described as accuracy without a formal evaluation protocol;
 - duplicated sentiment-analysis code;
 - an undeclared `RColorBrewer` dependency despite calling `brewer.pal()`;
 - broad regex activity matching against LDA top words;
 - a monolithic script mixing setup, loading, modelling, visualisation, and recommendation logic;
 - privacy/copyright risks if original student reflections are published directly.
 
-These problems are documented in [`docs/known-problems.md`](docs/known-problems.md).
+The detailed audit is preserved in [`docs/known-problems.md`](docs/known-problems.md).
+
+## What changed
+
+| Year 1 implementation | Rebuilt project |
+| --- | --- |
+| Hard-coded local paths | Project-relative data loading |
+| One monolithic script | Twelve focused R modules |
+| LDA topic number mapped to a category name | Category classification and topic discovery are separate tasks |
+| Every result pushed toward one category | Explicit `Ambiguous` and `Unclassified` states |
+| “Matchness” used as informal accuracy | Predictions and labels are separated; evaluation is explicit |
+| Sentiment mixed into the broader interpretation | NRC sentiment is descriptive only |
+| Regex recommendations from LDA top words | Recommendations require explicit classification evidence |
+| No reproducible test pipeline | Smoke tests and GitHub Actions |
+| Easy examples could look like validation | Clear fixtures are labelled as implementation checks |
+| Model changes could be judged by aggregate score alone | Locked benchmark, failure analysis, paired comparisons, and a model-decision record |
+| No external-test protocol | Independent annotation, adjudication, freeze, and privacy rules are defined before future evaluation |
+
+See [`docs/before-vs-after.md`](docs/before-vs-after.md) for the fuller technical comparison.
 
 ## Rebuilt architecture
 
@@ -87,92 +99,28 @@ Model decision review
 Independent-labelling + unseen-test protocol
 ```
 
-The analytical tasks remain separate. LDA topic numbers are not category labels, sentiment is not personality, and recommendation does not silently consume sentiment or topic indices.
+The analytical boundaries are intentional:
 
-## Repository structure
+- **topic discovery is not category classification**;
+- **sentiment description is not personality or interest classification**;
+- **recommendation requires explicit evidence**;
+- **validation data are not a substitute for a fresh external test set**.
 
-```text
-.
-├── README.md
-├── .github/workflows/r-tests.yml
-├── original/
-├── docs/
-│   ├── reconstruction-notes.md
-│   ├── known-problems.md
-│   ├── statistical-redesign.md
-│   ├── classification-baseline.md
-│   ├── topic-exploration.md
-│   ├── sentiment-analysis.md
-│   ├── recommendation-engine.md
-│   ├── visualisation.md
-│   ├── evaluation-challenge.md
-│   ├── failure-analysis.md
-│   ├── controlled-experiments.md
-│   ├── model-decision-review.md
-│   └── external-evaluation-protocol.md
-├── data/
-│   ├── sample/
-│   ├── evaluation/
-│   ├── external-evaluation/
-│   │   ├── README.md
-│   │   ├── dataset-register-template.csv
-│   │   ├── annotations-template.csv
-│   │   ├── adjudicated-labels-template.csv
-│   │   └── private/
-│   └── private/
-├── R/
-│   ├── 01_load_data.R
-│   ├── 02_preprocess.R
-│   ├── 03_classify_interests.R
-│   ├── 04_evaluate.R
-│   ├── 05_explore_topics.R
-│   ├── 06_sentiment.R
-│   ├── 07_recommend_events.R
-│   ├── 08_visualise.R
-│   ├── 09_evaluate_challenge.R
-│   ├── 10_analyse_failures.R
-│   ├── 11_controlled_experiments.R
-│   └── 12_validate_external_labels.R
-├── scripts/
-│   ├── render_sample_outputs.R
-│   ├── run_challenge_evaluation.R
-│   ├── run_failure_analysis.R
-│   ├── run_baseline_experiments.R
-│   └── validate_external_evaluation.R
-└── tests/
-    ├── smoke_test_phase2.R
-    ├── smoke_test_classification.R
-    ├── smoke_test_topics.R
-    ├── smoke_test_sentiment.R
-    ├── smoke_test_recommendations.R
-    ├── smoke_test_visualise.R
-    ├── smoke_test_challenge.R
-    ├── smoke_test_failure_analysis.R
-    ├── smoke_test_experiments.R
-    └── smoke_test_external_labels.R
-```
+## Evidence and model decision
 
-## Status
+### Clear synthetic fixtures
 
-### Phase 1 — reconstructed and frozen
+`data/sample/` contains deliberately easy examples used mainly to verify implementation and output structure.
 
-The historical R script was reconstructed from Appendix 1A of the submitted report and frozen under `original/`. PDF line wrapping was repaired, but the historical programming and methodological logic is intentionally preserved.
+They are **not** evidence of real-world accuracy.
 
-### Phase 2 — end-to-end reconstruction implemented
+### Locked challenge benchmark
 
-The corrected reconstruction includes project-relative loading, transparent preprocessing, a five-category dictionary classifier, explicit `ambiguous` / `unclassified` outcomes, corpus-level exploratory LDA, separate NRC sentiment description, explainable activity recommendation, base-R visualisation, smoke tests, and GitHub Actions automation.
+`data/evaluation/` contains benchmark version **`v1-locked-2026-08-20`** with 12 harder synthetic reflections covering paraphrase, negation/context, mixed-domain, off-domain, and surface-keyword-versus-purpose cases.
 
-### Phase 3 — locked synthetic challenge benchmark
+Once this benchmark informed model-development decisions, it became **validation data**, not an untouched test set.
 
-Benchmark version **`v1-locked-2026-08-20`** adds 12 harder synthetic reflections covering paraphrase, negation/context, mixed-domain, off-domain, and surface-keyword-versus-purpose cases.
-
-It is synthetic and challenge-oriented, not an unbiased external test set.
-
-### Phase 4 — failure analysis
-
-`R/10_analyse_failures.R` converts incorrect challenge decisions into a documented diagnostic taxonomy and investigation queue without changing the classifier or benchmark.
-
-### Phase 5 — controlled validation experiments
+### Controlled experiments
 
 Three pre-declared variants were compared:
 
@@ -182,38 +130,29 @@ B  A + local three-token negation handling
 C  B + minimum top score 2 + ambiguity margin 1
 ```
 
-The model-decision review retains **Variant A**. Deterministic reproduction from repository definitions gives A = **8/12**, B = **8/12**, and C = **8/12** correct validation decisions. B changes no decisions; C fixes one case and regresses one case. These are validation results on authored synthetic cases, not external accuracy claims. See [`docs/model-decision-review.md`](docs/model-decision-review.md).
+The repository definitions reproduce **8/12** correct validation decisions for A, B, and C. B changes no decisions; C fixes one case and regresses one case. The model-decision review therefore retains **Variant A** rather than promoting extra logic without net evidence of improvement.
 
-### Phase 6 — independent labelling and external-test protocol
+See [`docs/model-decision-review.md`](docs/model-decision-review.md).
 
-Phase 6 deliberately does **not** invent another synthetic "external" test set.
+## Reproducibility
 
-Instead it defines the process required before the project can make a fresh performance claim:
+The GitHub Actions workflow runs the complete required smoke-test and reporting pipeline, including:
 
-- at least two independent first-round annotators per reflection;
-- annotators do not see model predictions, scores, dictionary terms, or failure diagnoses;
-- `classified`, `ambiguous`, and `unclassified` are all valid outcomes;
-- primary and secondary category evidence is recorded explicitly;
-- confidence and short rationales are preserved;
-- exact first-round agreement is measured;
-- disagreements enter an adjudication queue rather than being silently overwritten;
-- final adjudicated labels are versioned and frozen before model evaluation;
-- a dataset registry records whether each case was first seen after model freeze;
-- real external reflection text and annotation exports remain private by default.
+- loading and preprocessing;
+- classification;
+- corpus-level topic exploration;
+- sentiment;
+- recommendations;
+- visualisation;
+- locked challenge evaluation;
+- failure analysis;
+- controlled experiments;
+- external-label protocol validation;
+- derived challenge/failure/experiment tables.
 
-Public schema files live under `data/external-evaluation/`; real material belongs in the git-ignored `data/external-evaluation/private/` directory. See [`docs/external-evaluation-protocol.md`](docs/external-evaluation-protocol.md).
+On Ubuntu, the workflow also installs the GSL system dependency needed by `topicmodels` and verifies that analytical packages can be loaded before running the tests.
 
-`R/12_validate_external_labels.R` checks schema/process consistency and can build an adjudication queue. It cannot prove that the data were genuinely unseen or that annotators were truly independent; those remain governance requirements that must be documented honestly.
-
-## Evaluation warning
-
-`data/sample/` contains deliberately easy synthetic fixtures. `data/evaluation/` is harder and locked but was still authored specifically for this project and has already been used for model development.
-
-Neither dataset supports a claim of real-world classification accuracy.
-
-A genuine external performance claim requires a new independently labelled unseen test set collected and frozen under the Phase 6 protocol.
-
-## Run the checks
+### Run locally
 
 ```bash
 Rscript tests/smoke_test_phase2.R
@@ -234,37 +173,74 @@ Optional analytical modules require:
 install.packages(c("topicmodels", "syuzhet"))
 ```
 
-## Useful commands
-
-Render sample portfolio figures:
+Generate the portfolio/reporting outputs with:
 
 ```bash
 Rscript scripts/render_sample_outputs.R
-```
-
-Run challenge/failure/experiment reports:
-
-```bash
 Rscript scripts/run_challenge_evaluation.R
 Rscript scripts/run_failure_analysis.R
 Rscript scripts/run_baseline_experiments.R
 ```
 
-When a real external-evaluation bundle exists locally:
+## Repository map
 
-```bash
-Rscript scripts/validate_external_evaluation.R \
-  data/external-evaluation/private/dataset-register.csv \
-  data/external-evaluation/private/annotations.csv \
-  data/external-evaluation/private/adjudicated-labels.csv
+```text
+.
+├── original/                  # frozen Year 1 reconstruction
+├── R/                         # corrected modular implementation
+├── data/
+│   ├── sample/                # deliberately clear synthetic fixtures
+│   ├── evaluation/            # locked synthetic challenge benchmark
+│   ├── external-evaluation/   # public schemas + ignored private area
+│   └── private/               # ignored private material
+├── docs/                      # methodology, audits, decisions, protocols
+├── scripts/                   # reproducible reporting/validation runners
+├── tests/                     # smoke tests
+├── output/                    # generated outputs/artifacts
+└── .github/workflows/         # CI
 ```
+
+## Documentation guide
+
+Start here:
+
+- [`docs/before-vs-after.md`](docs/before-vs-after.md) — concise technical comparison of the Year 1 project and rebuild;
+- [`docs/known-problems.md`](docs/known-problems.md) — audit of the historical implementation;
+- [`docs/statistical-redesign.md`](docs/statistical-redesign.md) — redesign principles;
+- [`docs/classification-baseline.md`](docs/classification-baseline.md) — transparent classifier design;
+- [`docs/topic-exploration.md`](docs/topic-exploration.md) — why LDA remains exploratory;
+- [`docs/sentiment-analysis.md`](docs/sentiment-analysis.md) — scope of NRC sentiment;
+- [`docs/recommendation-engine.md`](docs/recommendation-engine.md) — evidence-based recommendation logic;
+- [`docs/evaluation-challenge.md`](docs/evaluation-challenge.md) — locked synthetic benchmark;
+- [`docs/failure-analysis.md`](docs/failure-analysis.md) — failure taxonomy and investigation queue;
+- [`docs/controlled-experiments.md`](docs/controlled-experiments.md) — experiment protocol;
+- [`docs/model-decision-review.md`](docs/model-decision-review.md) — why Variant A was retained;
+- [`docs/external-evaluation-protocol.md`](docs/external-evaluation-protocol.md) — requirements for a future unseen test set.
+
+## Privacy and data governance
+
+The submitted report and original reflection files are not published here by default. The public repository contains reconstruction notes, synthetic fixtures, schemas, and code.
+
+Future real external-evaluation material belongs under the git-ignored `data/external-evaluation/private/` area unless publication rights and consent are clear.
+
+## Current limitations
+
+This repository demonstrates a more disciplined analysis workflow; it does **not** establish that the classifier is production-ready or generally accurate.
+
+Important limitations remain:
+
+- the challenge benchmark is synthetic and authored for this project;
+- the retained classifier is a transparent lexical baseline, not contextual language understanding;
+- LDA on a small corpus is exploratory and should not be treated as stable latent structure;
+- NRC sentiment is lexical description, not psychological inference;
+- no independently labelled unseen external dataset has yet been evaluated.
 
 ## Next evidence gate
 
-The project should now stop tuning against the 12 authored validation cases.
+The project should stop tuning against the 12 authored validation cases.
 
-The next substantive work is **data collection and independent labelling**, not another benchmark-specific code rule. Once a new external set is frozen, compare the retained A baseline against any future phrase-aware or context-aware candidate exactly once for the external claim.
+The next substantive step is to collect new reflections, obtain at least two independent first-round annotations per case, resolve disagreements through adjudication, freeze the final labels, and only then evaluate the retained baseline or a future candidate model.
 
-## Historical note
+## Historical preservation
 
-This is a retrospective learning repository. The `original/` directory is frozen to show what was actually attempted at the end of Year 1; corrected code belongs separately under `R/` rather than silently replacing the historical version.
+This is a retrospective learning repository. The `original/` directory preserves what was attempted at the end of Year 1; corrected code lives separately under `R/` so the learning history is visible rather than overwritten.
