@@ -1,6 +1,6 @@
 # Data policy
 
-This repository is public-facing, so the reconstruction uses synthetic data by default.
+This repository is public-facing, so the reconstruction uses synthetic data by default and separates future real evaluation data from public source history.
 
 ## `sample/`
 
@@ -26,7 +26,7 @@ The five reflections were newly written for this repository. They are **not** co
 
 ## `evaluation/`
 
-A harder synthetic challenge benchmark used in Phase 3.
+A harder synthetic challenge benchmark used in Phases 3–5.
 
 ```text
 evaluation/
@@ -42,10 +42,28 @@ Benchmark version `v1-locked-2026-08-20` contains paraphrase, negation, mixed-do
 
 This benchmark is **synthetic and challenge-oriented, not independently collected or externally annotated**. It must not be presented as an unbiased held-out real-world test set.
 
-After creation, v1 is treated as locked: do not rewrite cases merely to improve classifier results. If future model development repeatedly uses these results, v1 becomes validation data and a new unseen test set is required for fresh performance claims. See [`evaluation/README.md`](evaluation/README.md).
+After creation, v1 is treated as locked. Because Phases 4–5 inspected and experimented against it, it should now be treated as validation data rather than a fresh test set.
+
+## `external-evaluation/`
+
+Phase 6 provides public templates for a future independently labelled unseen evaluation set:
+
+```text
+external-evaluation/
+├── README.md
+├── dataset-register-template.csv
+├── annotations-template.csv
+├── adjudicated-labels-template.csv
+└── private/
+    └── .gitkeep
+```
+
+The public files are **empty schemas only**. They do not constitute an external dataset.
+
+Real external reflection text, completed annotation exports, and adjudication records should be stored under `external-evaluation/private/`, which is ignored by Git. Follow [`../docs/external-evaluation-protocol.md`](../docs/external-evaluation-protocol.md) before collection or evaluation.
 
 ## `private/`
 
 Original or identifiable student reflections, if retained for private local research. This directory is ignored by Git except for `.gitkeep`.
 
-Do not commit personal student IDs, private contact information, or reflection text whose redistribution rights are unclear.
+Do not commit personal student IDs, private contact information, annotator identities, or reflection text whose redistribution rights are unclear.
