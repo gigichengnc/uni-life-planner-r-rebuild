@@ -26,8 +26,8 @@ jobs:
           r-version: release
           use-public-rspm: true
 
-      - name: Install topic modelling dependency
-        run: Rscript -e 'install.packages("topicmodels")'
+      - name: Install analysis dependencies
+        run: Rscript -e 'install.packages(c("topicmodels", "syuzhet"))'
 
       - name: Run Phase 2 foundation smoke test
         run: Rscript tests/smoke_test_phase2.R
@@ -37,3 +37,6 @@ jobs:
 
       - name: Run topic exploration smoke test
         run: Rscript tests/smoke_test_topics.R
+
+      - name: Run sentiment smoke test
+        run: Rscript tests/smoke_test_sentiment.R
