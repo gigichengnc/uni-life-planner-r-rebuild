@@ -1,7 +1,8 @@
+# Year 1 Baseline v1 — frozen historical reconstruction
 # Reconstructed from Appendix 1A of the original STAT 2610SEF report.
-# Historical code: preserve before refactoring.
 # PDF line wrapping has been repaired, but methodological/programming issues
 # are intentionally left in place and documented in docs/known-problems.md.
+# Do not refactor this file; improvements belong in R/.
 
 # List of required packages
 packages <- c(
