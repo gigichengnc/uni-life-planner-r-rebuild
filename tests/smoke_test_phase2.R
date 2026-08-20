@@ -1,13 +1,21 @@
 # Minimal Phase 2 smoke test.
-# Run from anywhere inside the repository with:
-#   Rscript tests/smoke_test_phase2.R
+# Run with Rscript from any working directory.
 
-source(file.path("R", "01_load_data.R"))
-source(file.path("R", "02_preprocess.R"))
+args <- commandArgs(trailingOnly = FALSE)
+file_arg <- grep("^--file=", args, value = TRUE)
 
-root <- find_project_root()
+if (length(file_arg) == 0L) {
+  stop("Run this test with Rscript so the script path can be detected.")
+}
+
+script_path <- sub("^--file=", "", file_arg[1])
+script_dir <- dirname(normalizePath(script_path, winslash = "/", mustWork = TRUE))
+root <- normalizePath(file.path(script_dir, ".."), winslash = "/", mustWork = TRUE)
+
+source(file.path(root, "R", "01_load_data.R"))
+source(file.path(root, "R", "02_preprocess.R"))
+
 sample_data <- load_sample_data(root)
-
 tokens <- preprocess_reflections(sample_data$reflections)
 counts <- count_terms(tokens)
 dtm <- build_document_term_matrix(tokens)
