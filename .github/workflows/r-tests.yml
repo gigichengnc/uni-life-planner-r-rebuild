@@ -1,0 +1,32 @@
+name: R smoke tests
+
+on:
+  push:
+    branches:
+      - reconstruct-year1-project
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Run Phase 2 foundation smoke test
+        run: Rscript tests/smoke_test_phase2.R
+
+      - name: Run classification smoke test
+        run: Rscript tests/smoke_test_classification.R
