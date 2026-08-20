@@ -12,6 +12,10 @@ renv/staging/
 data/private/*
 !data/private/.gitkeep
 
+# Private future external-evaluation data
+data/external-evaluation/private/*
+!data/external-evaluation/private/.gitkeep
+
 # Generated outputs
 output/figures/*
 !output/figures/.gitkeep
