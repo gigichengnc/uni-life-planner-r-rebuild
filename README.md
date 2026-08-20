@@ -9,10 +9,10 @@ This repository preserves the original attempt while rebuilding it as a more rep
 The project documents:
 
 1. what the original Year 1 implementation attempted;
-2. how the original R pipeline worked;
-3. where the statistical and programming problems occurred;
-4. how those problems can be redesigned without erasing the historical work;
-5. how the corrected pipeline can be tested, evaluated, and visualised explicitly.
+2. where its statistical and programming problems occurred;
+3. how those problems can be redesigned without erasing the historical work;
+4. how the corrected pipeline can be tested, visualised, and stress-tested;
+5. where the transparent baseline still fails.
 
 ## Original question
 
@@ -63,7 +63,7 @@ The Year 1 implementation contains several useful learning examples:
 
 These problems are documented in [`docs/known-problems.md`](docs/known-problems.md).
 
-The purpose of the rebuild is not to hide those mistakes. It is to make the improvement inspectable:
+The rebuild turns that into an inspectable learning sequence:
 
 ```text
 historical implementation
@@ -74,9 +74,11 @@ methodological redesign
         ↓
 modular implementation
         ↓
-explicit tests and evaluation
+explicit tests
         ↓
-interpretable visual outputs
+interpretable outputs
+        ↓
+locked failure-case benchmark
 ```
 
 ## Rebuilt architecture
@@ -87,7 +89,7 @@ Reflection text
       v
 Data loading + preprocessing
       |
-      +--> interest classification --> explicit evaluation
+      +--> interest classification --> evaluation
       |
       +--> optional corpus-level LDA topic exploration
       |
@@ -98,19 +100,19 @@ Explainable activity recommendation
       |
       v
 Interpretable visualisation
+      |
+      v
+Locked synthetic challenge evaluation
 ```
 
-The important design rule is that these tasks remain separate. LDA topic numbers are not category labels, sentiment is not personality, and recommendation does not silently consume sentiment or topic indices.
+The analytical tasks remain separate. LDA topic numbers are not category labels, sentiment is not personality, and recommendation does not silently consume sentiment or topic indices.
 
 ## Repository structure
 
 ```text
 .
 ├── README.md
-├── .gitignore
-├── .github/
-│   └── workflows/
-│       └── r-tests.yml
+├── .github/workflows/r-tests.yml
 ├── original/
 │   ├── README.md
 │   └── reconstructed_year1_code.R
@@ -122,21 +124,23 @@ The important design rule is that these tasks remain separate. LDA topic numbers
 │   ├── topic-exploration.md
 │   ├── sentiment-analysis.md
 │   ├── recommendation-engine.md
-│   └── visualisation.md
+│   ├── visualisation.md
+│   └── evaluation-challenge.md
 ├── data/
 │   ├── README.md
 │   ├── sample/
 │   │   ├── activities.csv
 │   │   ├── manifest.csv
 │   │   └── reflections/
-│   │       ├── reflection_01.txt
-│   │       ├── reflection_02.txt
-│   │       ├── reflection_03.txt
-│   │       ├── reflection_04.txt
-│   │       └── reflection_05.txt
+│   ├── evaluation/
+│   │   ├── README.md
+│   │   ├── labels.csv
+│   │   └── reflections/
+│   │       ├── eval_01.txt
+│   │       ├── ...
+│   │       └── eval_12.txt
 │   └── private/
 ├── R/
-│   ├── README.md
 │   ├── 01_load_data.R
 │   ├── 02_preprocess.R
 │   ├── 03_classify_interests.R
@@ -144,19 +148,19 @@ The important design rule is that these tasks remain separate. LDA topic numbers
 │   ├── 05_explore_topics.R
 │   ├── 06_sentiment.R
 │   ├── 07_recommend_events.R
-│   └── 08_visualise.R
+│   ├── 08_visualise.R
+│   └── 09_evaluate_challenge.R
 ├── scripts/
-│   └── render_sample_outputs.R
-├── output/
-│   ├── figures/
-│   └── examples/
+│   ├── render_sample_outputs.R
+│   └── run_challenge_evaluation.R
 └── tests/
     ├── smoke_test_phase2.R
     ├── smoke_test_classification.R
     ├── smoke_test_topics.R
     ├── smoke_test_sentiment.R
     ├── smoke_test_recommendations.R
-    └── smoke_test_visualise.R
+    ├── smoke_test_visualise.R
+    └── smoke_test_challenge.R
 ```
 
 ## Status
@@ -167,62 +171,61 @@ The historical R script was reconstructed from Appendix 1A of the submitted repo
 
 ### Phase 2 — end-to-end reconstruction implemented
 
-The corrected reconstruction now includes:
+The corrected reconstruction includes project-relative loading, transparent preprocessing, a five-category dictionary classifier, explicit `ambiguous` / `unclassified` outcomes, corpus-level exploratory LDA, separate NRC sentiment description, explainable activity recommendation, base-R visualisation, smoke tests, and GitHub Actions automation.
 
-- project-relative loading instead of hard-coded local paths;
-- synthetic public-safe reflection and activity fixtures;
-- reusable preprocessing;
-- a transparent five-category dictionary classifier;
-- explicit ambiguous and unclassified outcomes;
-- classification evaluation against labelled synthetic fixtures;
-- optional corpus-level LDA kept separate from category classification;
-- NRC sentiment as a separate descriptive layer;
-- an explainable recommender with evidence gates and `no_recommendation` outcomes;
-- a base-R visualisation layer for the main interpretable outputs;
-- smoke tests for all six stages;
-- GitHub Actions automation for the tests and CI-rendered figure artifacts.
+The loading, preprocessing, classification, evaluation, recommendation, and visualisation modules use base R. Exploratory LDA adds the `topicmodels` dependency; NRC sentiment is isolated behind `syuzhet`.
 
-The loading, preprocessing, classification, evaluation, recommendation, and visualisation modules use base R. Exploratory LDA intentionally adds the `topicmodels` dependency, while NRC sentiment is isolated behind the `syuzhet` dependency.
+### Phase 3 — locked synthetic challenge benchmark
+
+The clear Phase 2 fixtures are not enough to evaluate failure behaviour, so Phase 3 adds benchmark version **`v1-locked-2026-08-20`** with 12 harder synthetic reflections.
+
+The challenge set includes:
+
+- paraphrase cases;
+- negation/context cases;
+- mixed-domain reflections;
+- an off-domain reflection that should not be forced into a category;
+- examples where surface keywords conflict with the intended semantic focus.
+
+The benchmark evaluates the complete decision: `classified` / `ambiguous` / `unclassified`, the intended theme, and the expected top or tied categories. It also records failure types and challenge types.
+
+This benchmark is **synthetic and deliberately designed to probe known weaknesses**. It is not an unbiased external test set and must not be presented as real-world accuracy evidence. Once created, v1 is treated as locked; rewriting cases to improve a later score would invalidate the benchmark logic. See [`docs/evaluation-challenge.md`](docs/evaluation-challenge.md).
 
 ## What changed methodologically?
 
 ### Category classification
 
-The Year 1 logic effectively treated an LDA topic number as a predefined category number. Phase 2 instead uses an explicit dictionary baseline, exposing category scores and matched evidence terms.
+The Year 1 logic effectively treated an LDA topic number as a predefined category number. The rebuild instead uses an explicit dictionary baseline that exposes category scores and matched evidence terms.
 
 ### Topic discovery
 
-LDA is fitted once across the corpus. Outputs remain neutrally labelled `Topic 1`, `Topic 2`, and so on. Topic indices are never automatically converted into the five predefined interest categories.
+LDA is fitted across the corpus and stays neutrally labelled `Topic 1`, `Topic 2`, and so on. Topic indices are never automatically converted into interest categories.
 
 ### Sentiment description
 
-NRC output is treated as lexical description. Raw counts and length-normalised rates can be shown, but they do not determine interest categories or personality.
+NRC output is treated as lexical description. It does not determine an interest category or infer personality.
 
 ### Activity recommendation
 
-The Year 1 recommender broadly matched LDA top words against activity announcements. Phase 2 requires sufficiently strong classification evidence, restricts candidate activities to the predicted category, ranks them using shared category evidence, and exposes the reasons for each recommendation. Weak evidence can produce no recommendation.
+Recommendations require sufficiently strong classification evidence, restrict candidates to the predicted category, rank them using shared evidence, and can return `no_recommendation` when evidence is weak. Sentiment and LDA topic numbers are excluded from ranking.
 
 ### Visualisation
 
-The new plotting layer displays classification evidence, LDA topic terms, NRC rates, and recommendation scores without introducing new decision rules. Generated figures are derived outputs and remain ignored by Git by default.
+Plots display existing evidence and model outputs without introducing new decision rules.
 
-See [`docs/classification-baseline.md`](docs/classification-baseline.md), [`docs/topic-exploration.md`](docs/topic-exploration.md), [`docs/sentiment-analysis.md`](docs/sentiment-analysis.md), [`docs/recommendation-engine.md`](docs/recommendation-engine.md), and [`docs/visualisation.md`](docs/visualisation.md).
+### Challenge evaluation
+
+The locked benchmark deliberately asks whether the transparent classifier fails gracefully on negation, mixed signals, off-domain text, and semantic/context mismatches. The purpose is not to hide failure cases; it is to make them visible before deciding whether a more complex classifier is justified.
 
 ## Evaluation warning
 
-The five reflection files and ten activities in `data/sample/` are deliberately clear synthetic fixtures. Their labels and pairings are test fixtures, not independently validated real-world ground truth.
+`data/sample/` contains deliberately easy synthetic fixtures. `data/evaluation/` is harder and locked, but it is still synthetic and was authored specifically for this project.
 
-Perfect results on them can verify implementation behaviour only. They do not establish real-world classification accuracy, stable latent topics, psychological sentiment validity, recommendation quality, or external validity of the plots.
+Neither dataset supports a claim of real-world classification accuracy. A genuine external performance claim would require independently labelled, unseen data from a broader population and a clearly documented labelling protocol.
 
-Meaningful performance claims require held-out data, independent labelling, and a larger corpus.
-
-## Data policy
-
-The public repository does **not** publish the original ten reflection journals or the unredacted submitted report by default. The Phase 2 sample reflections and activity catalogue are synthetic data written specifically for this reconstruction.
+If future model changes are repeatedly tuned against the Phase 3 benchmark, that benchmark becomes validation data and a new unseen test set is required.
 
 ## Run the checks
-
-On a machine with R installed:
 
 ```bash
 Rscript tests/smoke_test_phase2.R
@@ -231,35 +234,36 @@ Rscript tests/smoke_test_topics.R
 Rscript tests/smoke_test_sentiment.R
 Rscript tests/smoke_test_recommendations.R
 Rscript tests/smoke_test_visualise.R
+Rscript tests/smoke_test_challenge.R
 ```
 
-The optional analytical modules require:
+Optional analytical modules require:
 
 ```r
 install.packages(c("topicmodels", "syuzhet"))
 ```
 
-CI installs these packages through `.github/workflows/r-tests.yml` and uploads the rendered CI sample figures as a workflow artifact when available.
+CI installs these packages and uploads rendered figures plus challenge-evaluation CSVs as workflow artifacts when available.
 
-## Render the sample portfolio figures
+## Generate derived outputs
+
+Portfolio figures:
 
 ```bash
 Rscript scripts/render_sample_outputs.R
 ```
 
-This writes five PNG figures to `output/figures/sample/` by default:
+Challenge benchmark tables:
 
-- classification scores;
-- top-vs-runner-up classification evidence;
-- exploratory topic terms;
-- NRC sentiment rates;
-- explainable recommendation rankings.
+```bash
+Rscript scripts/run_challenge_evaluation.R
+```
 
-Generated outputs are ignored by Git so source history stays focused on code and documentation.
+Generated PNG/CSV outputs are ignored by Git so source history stays focused on code, fixtures, and documentation.
 
 ## Next phase
 
-The original reflection-to-recommendation workflow is now reconstructed end to end. The next meaningful work is **validation rather than adding more model complexity**: create a genuinely held-out labelled dataset, document the labelling protocol, test failure cases, and then compare the transparent baseline with alternative classifiers only if the data volume supports it.
+The next useful step is **failure analysis before model escalation**. Inspect which challenge types fail and decide whether the limitation is fixable with transparent rules (for example phrase/negation handling or explicit multi-label support) or whether a larger independently labelled dataset is needed before comparing supervised classifiers.
 
 ## Historical note
 
