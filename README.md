@@ -72,7 +72,8 @@ These problems are documented in [`docs/known-problems.md`](docs/known-problems.
 ├── docs/
 │   ├── reconstruction-notes.md
 │   ├── known-problems.md
-│   └── statistical-redesign.md
+│   ├── statistical-redesign.md
+│   └── classification-baseline.md
 ├── data/
 │   ├── README.md
 │   ├── sample/
@@ -88,12 +89,15 @@ These problems are documented in [`docs/known-problems.md`](docs/known-problems.
 ├── R/
 │   ├── README.md
 │   ├── 01_load_data.R
-│   └── 02_preprocess.R
+│   ├── 02_preprocess.R
+│   ├── 03_classify_interests.R
+│   └── 04_evaluate.R
 ├── output/
 │   ├── figures/
 │   └── examples/
 └── tests/
-    └── smoke_test_phase2.R
+    ├── smoke_test_phase2.R
+    └── smoke_test_classification.R
 ```
 
 ## Status
@@ -102,40 +106,60 @@ These problems are documented in [`docs/known-problems.md`](docs/known-problems.
 
 The historical R script was reconstructed from Appendix 1A of the submitted report and frozen as [`original/reconstructed_year1_code.R`](original/reconstructed_year1_code.R). PDF line wrapping was repaired, but the historical programming and methodological logic is intentionally preserved.
 
-### Phase 2 — foundation in progress
+### Phase 2 — corrected foundation + transparent classification baseline
 
-The corrected implementation has started with the parts that should be fixed before any new modelling is added:
+The corrected implementation now includes:
 
 - project-relative data discovery instead of hard-coded local paths;
 - synthetic public-safe reflection and activity data;
 - reusable data loading functions;
 - preprocessing separated from modelling;
 - explicit token and term-count outputs;
-- a small smoke test for the corrected foundation.
+- a transparent dictionary classifier for the five predefined interest categories;
+- explicit ambiguous and unclassified outcomes;
+- evaluation against the labelled synthetic fixtures;
+- smoke tests for the foundation and classification pipeline.
 
-The first two corrected modules use base R only, making the transformations easier to inspect and reducing unnecessary dependency problems.
+The corrected modules currently use base R only, making the transformations and scoring rules easy to inspect.
+
+## What changed methodologically?
+
+The key correction is that **topic discovery and category classification are now separate tasks**.
+
+The Year 1 logic effectively treated an LDA topic number as if it were the same thing as a predefined category number. Phase 2 instead uses an explicit category dictionary as a simple classification baseline. Every score and matched term can be inspected.
+
+See [`docs/classification-baseline.md`](docs/classification-baseline.md).
+
+## Evaluation warning
+
+The five current reflection files are synthetic fixtures written specifically for this reconstruction. Their `intended_theme` labels are test labels, not independently validated real-world ground truth.
+
+Therefore, a perfect result on these fixtures would verify the implementation only. It must not be presented as evidence of 100% real-world classification accuracy. A meaningful performance claim requires a separate labelled evaluation dataset that was not written to fit the dictionary.
 
 ## Data policy
 
 The public repository does **not** publish the original ten reflection journals or the unredacted submitted report by default. The Phase 2 sample reflections and activity catalogue are synthetic test data written specifically for this reconstruction.
 
-## Next methodological phase
-
-The next implementation should separate **topic discovery** from **category classification**:
-
-- corpus-level exploratory topic modelling, if LDA is retained;
-- a transparent dictionary/rule-based baseline for the five predefined categories;
-- explicit evaluation against labelled synthetic/redacted reflections;
-- sentiment analysis as a separate task;
-- recommendation logic based on explicit scores rather than arbitrary topic-number alignment.
-
-## Quick foundation check
+## Quick checks
 
 On a machine with R installed:
 
 ```bash
 Rscript tests/smoke_test_phase2.R
+Rscript tests/smoke_test_classification.R
 ```
+
+This environment has not executed those R tests, so the repository does not claim runtime verification yet.
+
+## Next methodological phase
+
+The next work can add separate analytical modules without mixing their assumptions:
+
+- optional corpus-level exploratory topic modelling;
+- sentiment analysis;
+- activity recommendation using explicit category/term scores;
+- visualisation;
+- later, a genuinely held-out labelled evaluation set.
 
 ## Historical note
 
