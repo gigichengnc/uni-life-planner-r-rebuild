@@ -14,6 +14,7 @@ permissions:
 jobs:
   smoke-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -25,8 +26,14 @@ jobs:
           r-version: release
           use-public-rspm: true
 
+      - name: Install topic modelling dependency
+        run: Rscript -e 'install.packages("topicmodels")'
+
       - name: Run Phase 2 foundation smoke test
         run: Rscript tests/smoke_test_phase2.R
 
       - name: Run classification smoke test
         run: Rscript tests/smoke_test_classification.R
+
+      - name: Run topic exploration smoke test
+        run: Rscript tests/smoke_test_topics.R
