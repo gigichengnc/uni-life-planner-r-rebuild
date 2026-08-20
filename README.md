@@ -10,9 +10,9 @@ The project documents:
 
 1. what the original Year 1 implementation attempted;
 2. where its statistical and programming problems occurred;
-3. how those problems can be redesigned without erasing the historical work;
+3. how those problems were redesigned without erasing the historical work;
 4. how the corrected pipeline can be tested, visualised, and stress-tested;
-5. where the transparent baseline still fails.
+5. where the transparent baseline still fails and how those failures can be diagnosed before model escalation.
 
 ## Original question
 
@@ -79,6 +79,10 @@ explicit tests
 interpretable outputs
         ↓
 locked failure-case benchmark
+        ↓
+failure diagnosis
+        ↓
+model decision gate
 ```
 
 ## Rebuilt architecture
@@ -89,7 +93,7 @@ Reflection text
       v
 Data loading + preprocessing
       |
-      +--> interest classification --> evaluation
+      +--> interest classification --> clear-fixture evaluation
       |
       +--> optional corpus-level LDA topic exploration
       |
@@ -103,6 +107,9 @@ Interpretable visualisation
       |
       v
 Locked synthetic challenge evaluation
+      |
+      v
+Failure taxonomy + improvement queue
 ```
 
 The analytical tasks remain separate. LDA topic numbers are not category labels, sentiment is not personality, and recommendation does not silently consume sentiment or topic indices.
@@ -125,7 +132,8 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
 │   ├── sentiment-analysis.md
 │   ├── recommendation-engine.md
 │   ├── visualisation.md
-│   └── evaluation-challenge.md
+│   ├── evaluation-challenge.md
+│   └── failure-analysis.md
 ├── data/
 │   ├── README.md
 │   ├── sample/
@@ -149,10 +157,12 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
 │   ├── 06_sentiment.R
 │   ├── 07_recommend_events.R
 │   ├── 08_visualise.R
-│   └── 09_evaluate_challenge.R
+│   ├── 09_evaluate_challenge.R
+│   └── 10_analyse_failures.R
 ├── scripts/
 │   ├── render_sample_outputs.R
-│   └── run_challenge_evaluation.R
+│   ├── run_challenge_evaluation.R
+│   └── run_failure_analysis.R
 └── tests/
     ├── smoke_test_phase2.R
     ├── smoke_test_classification.R
@@ -160,7 +170,8 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
     ├── smoke_test_sentiment.R
     ├── smoke_test_recommendations.R
     ├── smoke_test_visualise.R
-    └── smoke_test_challenge.R
+    ├── smoke_test_challenge.R
+    └── smoke_test_failure_analysis.R
 ```
 
 ## Status
@@ -179,19 +190,21 @@ The loading, preprocessing, classification, evaluation, recommendation, and visu
 
 The clear Phase 2 fixtures are not enough to evaluate failure behaviour, so Phase 3 adds benchmark version **`v1-locked-2026-08-20`** with 12 harder synthetic reflections.
 
-The challenge set includes:
+The challenge set includes paraphrase, negation/context, mixed-domain, off-domain, and surface-keyword-versus-purpose cases. It evaluates the full decision: `classified` / `ambiguous` / `unclassified`, intended theme, and expected top or tied categories.
 
-- paraphrase cases;
-- negation/context cases;
-- mixed-domain reflections;
-- an off-domain reflection that should not be forced into a category;
-- examples where surface keywords conflict with the intended semantic focus.
+This benchmark is **synthetic and deliberately designed to probe known weaknesses**. It is not an unbiased external test set. Once created, v1 is treated as locked; rewriting cases to improve a later score would invalidate the benchmark logic. See [`docs/evaluation-challenge.md`](docs/evaluation-challenge.md).
 
-The benchmark evaluates the complete decision: `classified` / `ambiguous` / `unclassified`, the intended theme, and the expected top or tied categories. It also records failure types and challenge types.
+### Phase 4 — failure analysis before model escalation
 
-This benchmark is **synthetic and deliberately designed to probe known weaknesses**. It is not an unbiased external test set and must not be presented as real-world accuracy evidence. Once created, v1 is treated as locked; rewriting cases to improve a later score would invalidate the benchmark logic. See [`docs/evaluation-challenge.md`](docs/evaluation-challenge.md).
+Phase 4 keeps both the classifier and the locked benchmark unchanged. `R/10_analyse_failures.R` converts incorrect challenge decisions into a documented diagnostic taxonomy and an investigation queue.
 
-## What changed methodologically?
+Example diagnostic families include lexical coverage, negation/compositional language, semantic context, intent weighting, multi-label/abstention behaviour, calibration, and off-domain false positives.
+
+Each diagnosis is a **hypothesis about the observable error pattern**, not proof of the underlying causal mechanism. Suggested next steps are deliberately advisory: Phase 4 does not automatically edit the dictionary, tune thresholds, or replace the classifier.
+
+See [`docs/failure-analysis.md`](docs/failure-analysis.md).
+
+## Methodological rules
 
 ### Category classification
 
@@ -209,13 +222,9 @@ NRC output is treated as lexical description. It does not determine an interest 
 
 Recommendations require sufficiently strong classification evidence, restrict candidates to the predicted category, rank them using shared evidence, and can return `no_recommendation` when evidence is weak. Sentiment and LDA topic numbers are excluded from ranking.
 
-### Visualisation
+### Challenge evaluation and failure analysis
 
-Plots display existing evidence and model outputs without introducing new decision rules.
-
-### Challenge evaluation
-
-The locked benchmark deliberately asks whether the transparent classifier fails gracefully on negation, mixed signals, off-domain text, and semantic/context mismatches. The purpose is not to hide failure cases; it is to make them visible before deciding whether a more complex classifier is justified.
+The locked benchmark deliberately asks whether the transparent classifier fails gracefully. Phase 4 then diagnoses observed failures without changing the benchmark or classifier. If later changes are repeatedly designed while looking at this benchmark, it becomes validation data and a new unseen test set is required for external claims.
 
 ## Evaluation warning
 
@@ -223,7 +232,7 @@ The locked benchmark deliberately asks whether the transparent classifier fails 
 
 Neither dataset supports a claim of real-world classification accuracy. A genuine external performance claim would require independently labelled, unseen data from a broader population and a clearly documented labelling protocol.
 
-If future model changes are repeatedly tuned against the Phase 3 benchmark, that benchmark becomes validation data and a new unseen test set is required.
+The Phase 4 taxonomy is also rule-based. It is useful for disciplined debugging, not a scientifically validated causal analysis of model errors.
 
 ## Run the checks
 
@@ -235,6 +244,7 @@ Rscript tests/smoke_test_sentiment.R
 Rscript tests/smoke_test_recommendations.R
 Rscript tests/smoke_test_visualise.R
 Rscript tests/smoke_test_challenge.R
+Rscript tests/smoke_test_failure_analysis.R
 ```
 
 Optional analytical modules require:
@@ -243,7 +253,7 @@ Optional analytical modules require:
 install.packages(c("topicmodels", "syuzhet"))
 ```
 
-CI installs these packages and uploads rendered figures plus challenge-evaluation CSVs as workflow artifacts when available.
+CI installs these packages and uploads rendered figures, challenge-evaluation tables, and failure-analysis tables as workflow artifacts when available.
 
 ## Generate derived outputs
 
@@ -259,11 +269,19 @@ Challenge benchmark tables:
 Rscript scripts/run_challenge_evaluation.R
 ```
 
+Failure diagnosis and improvement queue:
+
+```bash
+Rscript scripts/run_failure_analysis.R
+```
+
 Generated PNG/CSV outputs are ignored by Git so source history stays focused on code, fixtures, and documentation.
 
 ## Next phase
 
-The next useful step is **failure analysis before model escalation**. Inspect which challenge types fail and decide whether the limitation is fixable with transparent rules (for example phrase/negation handling or explicit multi-label support) or whether a larger independently labelled dataset is needed before comparing supervised classifiers.
+The next phase should be a **controlled model-decision experiment**, not automatic escalation. Review the Phase 4 failure register first, then choose the smallest justified intervention: a transparent phrase/negation rule, calibrated abstention or multi-label logic, evidence-supported dictionary changes, or a supervised/context-aware classifier only if enough independently labelled data exists.
+
+Any model change should be recorded separately from the locked benchmark, and repeated tuning against the benchmark should be treated as validation rather than fresh testing.
 
 ## Historical note
 

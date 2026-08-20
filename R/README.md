@@ -14,11 +14,12 @@ The corrected implementation lives here and remains separate from `../original/`
 07_recommend_events.R
 08_visualise.R
 09_evaluate_challenge.R
+10_analyse_failures.R
 ```
 
 ### `01_load_data.R`
 
-Replaces hard-coded Windows paths with project-relative loading. It now supports both the clear Phase 2 sample fixtures and the locked Phase 3 challenge benchmark.
+Replaces hard-coded Windows paths with project-relative loading. It supports both the clear Phase 2 sample fixtures and the locked Phase 3 challenge benchmark.
 
 ### `02_preprocess.R`
 
@@ -52,16 +53,23 @@ Renders interpretable PNG outputs for classification evidence, topic terms, sent
 
 Evaluates the unchanged transparent classifier on `data/evaluation/`, benchmark version `v1-locked-2026-08-20`.
 
-The challenge evaluation checks the full decision:
+The challenge evaluation checks the full decision: expected status, intended theme, expected top/tied categories, and results by challenge type. It intentionally does not require a perfect score.
 
-- expected `classified`, `ambiguous`, or `unclassified` status;
-- intended theme;
-- expected top category or tied top-category set;
-- failure type and challenge type.
+See [`../docs/evaluation-challenge.md`](../docs/evaluation-challenge.md).
 
-It reports overall decision accuracy, single-label accuracy, ambiguity handling, unclassified handling, coverage, per-case failures, and results by challenge type.
+### `10_analyse_failures.R`
 
-The benchmark is synthetic and intentionally probes known baseline weaknesses. It is **not** an unbiased external test set. See [`../docs/evaluation-challenge.md`](../docs/evaluation-challenge.md).
+Adds Phase 4 diagnosis without changing the classifier or locked benchmark.
+
+It:
+
+- assigns every incorrect challenge case one primary diagnostic hypothesis;
+- groups failures into broader families such as lexical coverage, negation, semantic context, intent weighting, multi-label/abstention, calibration, and scope;
+- records priority, complexity hints, and suggested investigations;
+- creates an improvement queue without automatically changing model code;
+- preserves correct cases as `failure_mode = "correct"` so the full benchmark remains auditable.
+
+The taxonomy is rule-based and should be interpreted as disciplined debugging support rather than proven causal explanation. See [`../docs/failure-analysis.md`](../docs/failure-analysis.md).
 
 ## Quick checks
 
@@ -73,7 +81,10 @@ Rscript tests/smoke_test_sentiment.R
 Rscript tests/smoke_test_recommendations.R
 Rscript tests/smoke_test_visualise.R
 Rscript tests/smoke_test_challenge.R
+Rscript tests/smoke_test_failure_analysis.R
 ```
+
+The Phase 3/4 tests verify benchmark loading, evaluation, diagnosis, and reporting structure. They do **not** assert that the classifier must achieve a particular benchmark accuracy.
 
 Optional topic/sentiment modules require:
 
@@ -97,6 +108,12 @@ Challenge benchmark tables:
 Rscript scripts/run_challenge_evaluation.R
 ```
 
+Failure register and improvement queue:
+
+```bash
+Rscript scripts/run_failure_analysis.R
+```
+
 Generated figures and CSV outputs remain ignored by Git and are uploaded as CI artifacts when available.
 
 ## Methodological rules
@@ -110,3 +127,5 @@ Generated figures and CSV outputs remain ignored by Git and are uploaded as CI a
 > **visualisation displays existing outputs; it does not create new evidence.**
 
 > **a benchmark is not held out anymore once you tune repeatedly against it.**
+
+> **failure analysis should diagnose the baseline before changing it.**

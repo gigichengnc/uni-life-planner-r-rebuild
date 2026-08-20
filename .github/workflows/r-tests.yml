@@ -50,8 +50,14 @@ jobs:
       - name: Run locked challenge benchmark smoke test
         run: Rscript tests/smoke_test_challenge.R
 
+      - name: Run failure-analysis smoke test
+        run: Rscript tests/smoke_test_failure_analysis.R
+
       - name: Render challenge benchmark tables
         run: Rscript scripts/run_challenge_evaluation.R output/examples/challenge
+
+      - name: Render failure-analysis tables
+        run: Rscript scripts/run_failure_analysis.R output/examples/failure-analysis
 
       - name: Upload rendered sample figures
         if: always()
@@ -67,4 +73,12 @@ jobs:
         with:
           name: phase3-challenge-evaluation
           path: output/examples/challenge/*.csv
+          if-no-files-found: warn
+
+      - name: Upload failure-analysis tables
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-failure-analysis
+          path: output/examples/failure-analysis/*.csv
           if-no-files-found: warn
