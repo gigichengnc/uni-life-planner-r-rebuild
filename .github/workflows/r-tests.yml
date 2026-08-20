@@ -56,6 +56,9 @@ jobs:
       - name: Run controlled-experiment smoke test
         run: Rscript tests/smoke_test_experiments.R
 
+      - name: Run external-labelling protocol smoke test
+        run: Rscript tests/smoke_test_external_labels.R
+
       - name: Render challenge benchmark tables
         run: Rscript scripts/run_challenge_evaluation.R output/examples/challenge
 
