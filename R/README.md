@@ -2,7 +2,7 @@
 
 The corrected implementation lives here and remains separate from `../original/`.
 
-## Implemented in Phase 2
+## Implemented modules
 
 ```text
 01_load_data.R
@@ -13,63 +13,57 @@ The corrected implementation lives here and remains separate from `../original/`
 06_sentiment.R
 07_recommend_events.R
 08_visualise.R
+09_evaluate_challenge.R
 ```
 
 ### `01_load_data.R`
 
-Replaces the Year 1 hard-coded Windows paths with project-relative discovery and reusable loader functions. It loads synthetic reflections, the synthetic activity catalogue, and the manifest of intended test themes.
+Replaces hard-coded Windows paths with project-relative loading. It now supports both the clear Phase 2 sample fixtures and the locked Phase 3 challenge benchmark.
 
 ### `02_preprocess.R`
 
-Separates text cleaning and tokenisation from modelling. It provides transparent base-R functions for UTF-8 normalisation, lowercase conversion, URL/number/punctuation cleaning, stopword removal, tokenisation, term counts, and a document-term matrix.
+Provides transparent base-R cleaning, tokenisation, stopword removal, term counts, and a document-term matrix.
 
 ### `03_classify_interests.R`
 
-Introduces a transparent dictionary baseline for the five predefined categories. It does **not** treat LDA topic numbers as category identities.
-
-The classifier reports per-category scores, matched terms, the predicted category, top and runner-up scores, the margin, and explicit `ambiguous` / `unclassified` outcomes.
+Implements the transparent five-category dictionary baseline. It reports per-category scores, matched terms, top/runner-up scores, margins, and explicit `ambiguous` / `unclassified` outcomes.
 
 ### `04_evaluate.R`
 
-Compares predictions with labelled synthetic fixtures and reports strict accuracy, coverage, classified-case accuracy, case-level results, and a confusion matrix.
-
-The current labels are synthetic test labels, so the evaluation is a pipeline check rather than a real-world performance claim. See [`../docs/classification-baseline.md`](../docs/classification-baseline.md).
+Evaluates the classifier on deliberately clear synthetic sample fixtures. This is primarily an implementation check, not a real-world performance claim.
 
 ### `05_explore_topics.R`
 
-Reintroduces LDA only as a separate **exploratory topic-discovery** task. It builds one corpus-level document-term matrix, fits reproducible LDA, keeps labels neutral as `Topic 1`, `Topic 2`, etc., and never maps topic numbers directly onto the five predefined interest categories.
-
-See [`../docs/topic-exploration.md`](../docs/topic-exploration.md).
+Keeps LDA as optional corpus-level exploratory topic discovery only. Topic numbers are never converted directly into predefined interest categories.
 
 ### `06_sentiment.R`
 
-Keeps NRC sentiment as a separate **descriptive** task rather than mixing it into category assignment or personality interpretation. It reports raw NRC lexicon-hit counts, rates per 100 words, dominant lexical-emotion summaries, and explicit tie/no-hit outcomes.
-
-See [`../docs/sentiment-analysis.md`](../docs/sentiment-analysis.md).
+Keeps NRC sentiment as a separate lexical description with raw counts and length-normalised rates. It is not used as personality inference or category evidence.
 
 ### `07_recommend_events.R`
 
-Rebuilds activity recommendation around explicit classification evidence rather than broad regex matching against LDA top words. It applies evidence thresholds, restricts candidates to the predicted category, exposes score components and matched terms, permits `no_recommendation`, and excludes sentiment/LDA topic numbers from ranking.
-
-See [`../docs/recommendation-engine.md`](../docs/recommendation-engine.md).
+Ranks activities using explicit classification evidence and activity features, with thresholds and a `no_recommendation` outcome when evidence is weak. Sentiment and LDA topic numbers are excluded from ranking.
 
 ### `08_visualise.R`
 
-Turns the transparent outputs above into reproducible PNG figures without adding another modelling layer.
+Renders interpretable PNG outputs for classification evidence, topic terms, sentiment rates, and recommendation rankings without adding new modelling logic.
 
-It can render:
+### `09_evaluate_challenge.R`
 
-- per-category classification scores;
-- top-vs-runner-up classification evidence and margins;
-- exploratory LDA topic-term probabilities while keeping neutral topic labels;
-- NRC lexical sentiment rates;
-- explainable recommendation rankings.
+Evaluates the unchanged transparent classifier on `data/evaluation/`, benchmark version `v1-locked-2026-08-20`.
 
-See [`../docs/visualisation.md`](../docs/visualisation.md).
+The challenge evaluation checks the full decision:
+
+- expected `classified`, `ambiguous`, or `unclassified` status;
+- intended theme;
+- expected top category or tied top-category set;
+- failure type and challenge type.
+
+It reports overall decision accuracy, single-label accuracy, ambiguity handling, unclassified handling, coverage, per-case failures, and results by challenge type.
+
+The benchmark is synthetic and intentionally probes known baseline weaknesses. It is **not** an unbiased external test set. See [`../docs/evaluation-challenge.md`](../docs/evaluation-challenge.md).
 
 ## Quick checks
-
-From a machine with R installed:
 
 ```bash
 Rscript tests/smoke_test_phase2.R
@@ -78,25 +72,32 @@ Rscript tests/smoke_test_topics.R
 Rscript tests/smoke_test_sentiment.R
 Rscript tests/smoke_test_recommendations.R
 Rscript tests/smoke_test_visualise.R
+Rscript tests/smoke_test_challenge.R
 ```
 
-The tests verify implementation behaviour on deliberately clear synthetic fixtures. They do **not** establish real-world classification, topic, sentiment, recommendation, or visual validity.
-
-The optional analytical modules require:
+Optional topic/sentiment modules require:
 
 ```r
 install.packages(c("topicmodels", "syuzhet"))
 ```
 
-GitHub Actions installs these dependencies automatically and uploads CI-rendered sample figures as a workflow artifact when available.
+GitHub Actions installs those dependencies automatically.
 
-## Render the complete sample output
+## Generate derived outputs
+
+Sample figures:
 
 ```bash
 Rscript scripts/render_sample_outputs.R
 ```
 
-By default, the five generated figures are written to `output/figures/sample/`. Generated outputs are ignored by Git.
+Challenge benchmark tables:
+
+```bash
+Rscript scripts/run_challenge_evaluation.R
+```
+
+Generated figures and CSV outputs remain ignored by Git and are uploaded as CI artifacts when available.
 
 ## Methodological rules
 
@@ -108,4 +109,4 @@ By default, the five generated figures are written to `output/figures/sample/`. 
 
 > **visualisation displays existing outputs; it does not create new evidence.**
 
-Classification, topic discovery, sentiment description, recommendation, and presentation remain separate tasks with separate assumptions.
+> **a benchmark is not held out anymore once you tune repeatedly against it.**
