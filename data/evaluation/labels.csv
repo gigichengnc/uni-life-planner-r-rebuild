@@ -1,0 +1,13 @@
+reflection_id,file,benchmark_version,expected_status,intended_theme,expected_categories,challenge_type,label_rationale
+eval_01,eval_01.txt,v1-locked-2026-08-20,classified,Aesthetics & Spirituality,Aesthetics & Spirituality,negation_context,"The reflection is primarily about visual interpretation and quiet reflection; the word competitive is explicitly negated."
+eval_02,eval_02.txt,v1-locked-2026-08-20,classified,Future Skills & Intelligence,Future Skills & Intelligence,paraphrase_technical,"The central task is building and testing a digital tool, expressed with everyday technical language."
+eval_03,eval_03.txt,v1-locked-2026-08-20,classified,Humanity & Love,Humanity & Love,paraphrase_social,"The reflection centres on mentoring, inclusion, care, and support."
+eval_04,eval_04.txt,v1-locked-2026-08-20,classified,Igniting & Sports,Igniting & Sports,clean_single,"The dominant context is competitive sport, training, fitness, discipline, and pressure."
+eval_05,eval_05.txt,v1-locked-2026-08-20,classified,Temperance & Justice,Temperance & Justice,clean_single,"The reflection focuses on rules, fairness, accountability, evidence, and collective decisions."
+eval_06,eval_06.txt,v1-locked-2026-08-20,ambiguous,Ambiguous,"Future Skills & Intelligence|Igniting & Sports",mixed_equal,"Technical prototyping and competitive speaking are intentionally co-primary."
+eval_07,eval_07.txt,v1-locked-2026-08-20,unclassified,Unclassified,,off_domain,"Astronomy learning is outside the five preserved Year 1 categories and should not be forced into one."
+eval_08,eval_08.txt,v1-locked-2026-08-20,classified,Temperance & Justice,Temperance & Justice,context_over_keywords,"The legal-substantive focus is evidence and justice even though competition and pressure vocabulary is present."
+eval_09,eval_09.txt,v1-locked-2026-08-20,classified,Temperance & Justice,Temperance & Justice,cross_domain_primary,"Data analysis supports a sustainability and policy decision; governance is the primary purpose."
+eval_10,eval_10.txt,v1-locked-2026-08-20,ambiguous,Ambiguous,"Aesthetics & Spirituality|Future Skills & Intelligence",mixed_dual_domain,"Interactive art and programming are intentionally presented as equally important."
+eval_11,eval_11.txt,v1-locked-2026-08-20,classified,Igniting & Sports,Igniting & Sports,mixed_primary,"Both reflective wellbeing and exercise appear, but the writer explicitly prefers the physical training structure."
+eval_12,eval_12.txt,v1-locked-2026-08-20,ambiguous,Ambiguous,"Humanity & Love|Temperance & Justice",mixed_dual_domain,"Community service and governance are both material to the reflection, so a forced single label is not preferred."

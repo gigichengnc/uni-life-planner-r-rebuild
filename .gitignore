@@ -1,0 +1,29 @@
+# R session files
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# R package/environment caches
+renv/library/
+renv/staging/
+
+# Private or original student data
+data/private/*
+!data/private/.gitkeep
+
+# Private future external-evaluation data
+data/external-evaluation/private/*
+!data/external-evaluation/private/.gitkeep
+
+# Generated outputs
+output/figures/*
+!output/figures/.gitkeep
+output/examples/*
+!output/examples/.gitkeep
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
