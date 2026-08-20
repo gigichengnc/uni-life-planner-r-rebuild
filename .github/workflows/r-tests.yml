@@ -40,3 +40,6 @@ jobs:
 
       - name: Run sentiment smoke test
         run: Rscript tests/smoke_test_sentiment.R
+
+      - name: Run recommendation smoke test
+        run: Rscript tests/smoke_test_recommendations.R
