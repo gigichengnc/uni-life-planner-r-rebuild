@@ -11,6 +11,7 @@ The corrected implementation lives here and remains separate from `../original/`
 04_evaluate.R
 05_explore_topics.R
 06_sentiment.R
+07_recommend_events.R
 ```
 
 ### `01_load_data.R`
@@ -37,32 +38,34 @@ The current labels are synthetic test labels, so the evaluation is a pipeline ch
 
 Reintroduces LDA only as a separate **exploratory topic-discovery** task.
 
-It:
+It builds one corpus-level document-term matrix, fits reproducible LDA, keeps labels neutral as `Topic 1`, `Topic 2`, etc., and never maps topic numbers directly onto the five predefined interest categories.
 
-- builds one filtered document-term matrix across the corpus;
-- fits an LDA model with reproducible seed settings;
-- keeps labels neutral as `Topic 1`, `Topic 2`, etc.;
-- extracts top terms for each topic;
-- reports document-topic probabilities, dominant topics, runner-up topics, and margins;
-- warns when the corpus is very small;
-- never converts a topic number directly into one of the five predefined interest categories.
-
-This module intentionally uses the `topicmodels` package. See [`../docs/topic-exploration.md`](../docs/topic-exploration.md).
+See [`../docs/topic-exploration.md`](../docs/topic-exploration.md).
 
 ### `06_sentiment.R`
 
 Keeps NRC sentiment as a separate **descriptive** task rather than mixing it into category assignment or personality interpretation.
 
+It reports raw NRC lexicon-hit counts, rates per 100 words, dominant lexical-emotion summaries, and explicit tie/no-hit outcomes. It never determines an interest category or LDA topic label.
+
+See [`../docs/sentiment-analysis.md`](../docs/sentiment-analysis.md).
+
+### `07_recommend_events.R`
+
+Rebuilds the activity recommendation step around explicit evidence rather than a broad regex over LDA top words.
+
 It:
 
-- obtains the ten standard NRC emotion/polarity dimensions through `syuzhet`;
-- preserves raw lexicon-hit counts;
-- reports length-normalised rates per 100 words by default;
-- provides a simple descriptive summary of the highest-count core emotion and positive/negative balance;
-- represents ties and no-hit cases explicitly;
-- never uses sentiment to determine an interest category or LDA topic label.
+- requires a `classified` interest result;
+- applies minimum classifier-score and margin thresholds;
+- restricts candidates to the predicted interest category;
+- derives category-relevant feature terms from each activity title/description;
+- ranks candidates using the classifier score plus shared evidence terms;
+- returns the matched evidence and score components for inspection;
+- returns `no_recommendation` when evidence is weak;
+- explicitly excludes sentiment scores and LDA topic numbers from ranking.
 
-The sentiment layer is documented in [`../docs/sentiment-analysis.md`](../docs/sentiment-analysis.md).
+See [`../docs/recommendation-engine.md`](../docs/recommendation-engine.md).
 
 ## Quick checks
 
@@ -73,9 +76,10 @@ Rscript tests/smoke_test_phase2.R
 Rscript tests/smoke_test_classification.R
 Rscript tests/smoke_test_topics.R
 Rscript tests/smoke_test_sentiment.R
+Rscript tests/smoke_test_recommendations.R
 ```
 
-The first test checks data loading and preprocessing. The second checks the dictionary classifier and evaluation pipeline on the five deliberately clear synthetic fixtures. The third checks that corpus-level LDA can fit and return structured topic outputs; it does **not** validate the topics as real-world constructs. The fourth checks the NRC sentiment output structure and simple polarity probes; it does **not** validate sentiment as a psychological measurement.
+The tests verify implementation behaviour on deliberately clear synthetic fixtures. They do **not** establish real-world classification, topic, sentiment, or recommendation quality.
 
 The optional analytical modules require:
 
@@ -85,10 +89,9 @@ install.packages(c("topicmodels", "syuzhet"))
 
 GitHub Actions installs these dependencies automatically.
 
-## Planned next modules
+## Planned next module
 
 ```text
-07_recommend_events.R
 08_visualise.R
 ```
 
@@ -98,4 +101,6 @@ The methodological rules for the reconstruction are explicit:
 
 > **sentiment description is not personality or interest classification.**
 
-Classification has its own transparent scoring and evaluation path. LDA is optional exploratory analysis at corpus level only. NRC sentiment is a separate lexical description with documented limitations.
+> **recommendation requires explicit classification evidence; weak evidence may produce no recommendation.**
+
+Classification, topic discovery, sentiment description, and recommendation remain separate analytical tasks with separate assumptions.
