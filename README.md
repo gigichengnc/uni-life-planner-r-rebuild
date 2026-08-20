@@ -24,6 +24,8 @@ locked challenge benchmark
 failure analysis
         ↓
 controlled baseline experiments
+        ↓
+model decision review
 ```
 
 ## Original question
@@ -103,6 +105,9 @@ Failure taxonomy + improvement queue
       |
       v
 Controlled validation experiments
+      |
+      v
+Model decision review
 ```
 
 The analytical tasks remain separate. LDA topic numbers are not category labels, sentiment is not personality, and recommendation does not silently consume sentiment or topic indices.
@@ -127,7 +132,8 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
 │   ├── visualisation.md
 │   ├── evaluation-challenge.md
 │   ├── failure-analysis.md
-│   └── controlled-experiments.md
+│   ├── controlled-experiments.md
+│   └── model-decision-review.md
 ├── data/
 │   ├── README.md
 │   ├── sample/
@@ -211,6 +217,16 @@ No threshold grid search is used. Benchmark labels are used only for evaluation,
 
 Because the benchmark has already been inspected in Phase 4, Phase 5 explicitly treats it as **validation data**, not a fresh held-out test set. See [`docs/controlled-experiments.md`](docs/controlled-experiments.md).
 
+### Phase 5 model decision — retain A
+
+The model-decision review retains **Variant A** as the reference baseline and does not promote B or C.
+
+A deterministic reproduction from the repository definitions gives A = **8/12**, B = **8/12**, and C = **8/12** correct validation decisions. Variant B changes no decisions on the 12 locked cases. Variant C fixes `eval_12` but regresses `eval_11`, producing one improvement and one regression with no net gain.
+
+The review also shows why score alone is not enough: C moves more cases into ambiguous/unclassified states, but it still does not solve the lexical/context failures in `eval_01`, `eval_08`, or `eval_10`.
+
+These numbers are validation results on authored synthetic cases, not external accuracy claims. At the time of the review, a push-triggered GitHub Actions run was not available through the connected GitHub interface, so the R-generated Phase 5 artifact remains the runtime cross-check. See [`docs/model-decision-review.md`](docs/model-decision-review.md).
+
 A supervised/context-aware classifier remains deferred until there is enough independently labelled data to justify it.
 
 ## Evaluation warning
@@ -280,11 +296,13 @@ paired-summary.csv
 
 Generated PNG/CSV outputs are ignored by Git so source history stays focused on code, fixtures, and documentation.
 
-## Next decision gate
+## Next evidence gate
 
-Phase 5 should answer whether either transparent intervention deserves to become a **candidate baseline**. The decision should consider validation improvement, regressions, interpretability, and whether the mechanism is likely to generalise—not only the highest score.
+Do **not** tune another threshold or add more benchmark-specific rules against the same 12 authored cases.
 
-If a candidate is promoted later, the current baseline should remain reproducible, the change should be versioned explicitly, and a new unseen independently labelled test set should be created before making external performance claims.
+The next meaningful phase is to define a labelling protocol and create a new independently labelled unseen dataset. It should support a primary category, optional secondary category / multi-label cases, explicit `Ambiguous` and `Unclassified` outcomes, short label rationales, and—where practical—independent annotation of a subset so disagreement can be measured.
+
+Only after that new test data are frozen should the project compare the retained A baseline with phrase-aware rules, broader lexical coverage, or a supervised/context-aware model.
 
 ## Historical note
 
