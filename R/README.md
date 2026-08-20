@@ -12,6 +12,7 @@ The corrected implementation lives here and remains separate from `../original/`
 05_explore_topics.R
 06_sentiment.R
 07_recommend_events.R
+08_visualise.R
 ```
 
 ### `01_load_data.R`
@@ -36,36 +37,35 @@ The current labels are synthetic test labels, so the evaluation is a pipeline ch
 
 ### `05_explore_topics.R`
 
-Reintroduces LDA only as a separate **exploratory topic-discovery** task.
-
-It builds one corpus-level document-term matrix, fits reproducible LDA, keeps labels neutral as `Topic 1`, `Topic 2`, etc., and never maps topic numbers directly onto the five predefined interest categories.
+Reintroduces LDA only as a separate **exploratory topic-discovery** task. It builds one corpus-level document-term matrix, fits reproducible LDA, keeps labels neutral as `Topic 1`, `Topic 2`, etc., and never maps topic numbers directly onto the five predefined interest categories.
 
 See [`../docs/topic-exploration.md`](../docs/topic-exploration.md).
 
 ### `06_sentiment.R`
 
-Keeps NRC sentiment as a separate **descriptive** task rather than mixing it into category assignment or personality interpretation.
-
-It reports raw NRC lexicon-hit counts, rates per 100 words, dominant lexical-emotion summaries, and explicit tie/no-hit outcomes. It never determines an interest category or LDA topic label.
+Keeps NRC sentiment as a separate **descriptive** task rather than mixing it into category assignment or personality interpretation. It reports raw NRC lexicon-hit counts, rates per 100 words, dominant lexical-emotion summaries, and explicit tie/no-hit outcomes.
 
 See [`../docs/sentiment-analysis.md`](../docs/sentiment-analysis.md).
 
 ### `07_recommend_events.R`
 
-Rebuilds the activity recommendation step around explicit evidence rather than a broad regex over LDA top words.
-
-It:
-
-- requires a `classified` interest result;
-- applies minimum classifier-score and margin thresholds;
-- restricts candidates to the predicted interest category;
-- derives category-relevant feature terms from each activity title/description;
-- ranks candidates using the classifier score plus shared evidence terms;
-- returns the matched evidence and score components for inspection;
-- returns `no_recommendation` when evidence is weak;
-- explicitly excludes sentiment scores and LDA topic numbers from ranking.
+Rebuilds activity recommendation around explicit classification evidence rather than broad regex matching against LDA top words. It applies evidence thresholds, restricts candidates to the predicted category, exposes score components and matched terms, permits `no_recommendation`, and excludes sentiment/LDA topic numbers from ranking.
 
 See [`../docs/recommendation-engine.md`](../docs/recommendation-engine.md).
+
+### `08_visualise.R`
+
+Turns the transparent outputs above into reproducible PNG figures without adding another modelling layer.
+
+It can render:
+
+- per-category classification scores;
+- top-vs-runner-up classification evidence and margins;
+- exploratory LDA topic-term probabilities while keeping neutral topic labels;
+- NRC lexical sentiment rates;
+- explainable recommendation rankings.
+
+See [`../docs/visualisation.md`](../docs/visualisation.md).
 
 ## Quick checks
 
@@ -77,9 +77,10 @@ Rscript tests/smoke_test_classification.R
 Rscript tests/smoke_test_topics.R
 Rscript tests/smoke_test_sentiment.R
 Rscript tests/smoke_test_recommendations.R
+Rscript tests/smoke_test_visualise.R
 ```
 
-The tests verify implementation behaviour on deliberately clear synthetic fixtures. They do **not** establish real-world classification, topic, sentiment, or recommendation quality.
+The tests verify implementation behaviour on deliberately clear synthetic fixtures. They do **not** establish real-world classification, topic, sentiment, recommendation, or visual validity.
 
 The optional analytical modules require:
 
@@ -87,15 +88,17 @@ The optional analytical modules require:
 install.packages(c("topicmodels", "syuzhet"))
 ```
 
-GitHub Actions installs these dependencies automatically.
+GitHub Actions installs these dependencies automatically and uploads CI-rendered sample figures as a workflow artifact when available.
 
-## Planned next module
+## Render the complete sample output
 
-```text
-08_visualise.R
+```bash
+Rscript scripts/render_sample_outputs.R
 ```
 
-The methodological rules for the reconstruction are explicit:
+By default, the five generated figures are written to `output/figures/sample/`. Generated outputs are ignored by Git.
+
+## Methodological rules
 
 > **topic discovery is not category classification.**
 
@@ -103,4 +106,6 @@ The methodological rules for the reconstruction are explicit:
 
 > **recommendation requires explicit classification evidence; weak evidence may produce no recommendation.**
 
-Classification, topic discovery, sentiment description, and recommendation remain separate analytical tasks with separate assumptions.
+> **visualisation displays existing outputs; it does not create new evidence.**
+
+Classification, topic discovery, sentiment description, recommendation, and presentation remain separate tasks with separate assumptions.

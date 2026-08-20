@@ -12,7 +12,7 @@ The project documents:
 2. how the original R pipeline worked;
 3. where the statistical and programming problems occurred;
 4. how those problems can be redesigned without erasing the historical work;
-5. how the corrected pipeline can be tested and evaluated explicitly.
+5. how the corrected pipeline can be tested, evaluated, and visualised explicitly.
 
 ## Original question
 
@@ -25,7 +25,6 @@ Student reflection text
         |
         v
 Text preprocessing in R
-(lowercase, punctuation/number removal, stopword removal)
         |
         v
 Document-Term Matrix
@@ -49,22 +48,59 @@ Suggested student activities
 
 ## Why rebuild it?
 
-The original implementation contains several useful learning examples:
+The Year 1 implementation contains several useful learning examples:
 
 - hard-coded Windows file paths;
 - an unsupervised LDA topic index treated as if it were a predefined category label;
-- inconsistent descriptions of the number of categories/topics in the written report;
+- inconsistent descriptions of the number of categories/topics;
 - LDA fitted separately to very small individual documents;
 - human "matchness" judgments described as accuracy without a formal evaluation protocol;
 - duplicated sentiment-analysis code;
 - an undeclared `RColorBrewer` dependency despite calling `brewer.pal()`;
 - broad regex activity matching against LDA top words;
-- a single monolithic script mixing package installation, data loading, modelling, visualization, and recommendation logic;
+- a monolithic script mixing setup, loading, modelling, visualisation, and recommendation logic;
 - privacy/copyright risks if original student reflections are published directly.
 
 These problems are documented in [`docs/known-problems.md`](docs/known-problems.md).
 
-The purpose of the rebuild is not to hide those mistakes. It is to make the improvement inspectable: **historical implementation → diagnosis → redesign → tested implementation**.
+The purpose of the rebuild is not to hide those mistakes. It is to make the improvement inspectable:
+
+```text
+historical implementation
+        ↓
+problem diagnosis
+        ↓
+methodological redesign
+        ↓
+modular implementation
+        ↓
+explicit tests and evaluation
+        ↓
+interpretable visual outputs
+```
+
+## Rebuilt architecture
+
+```text
+Reflection text
+      |
+      v
+Data loading + preprocessing
+      |
+      +--> interest classification --> explicit evaluation
+      |
+      +--> optional corpus-level LDA topic exploration
+      |
+      +--> NRC lexical sentiment description
+      |
+      v
+Explainable activity recommendation
+      |
+      v
+Interpretable visualisation
+```
+
+The important design rule is that these tasks remain separate. LDA topic numbers are not category labels, sentiment is not personality, and recommendation does not silently consume sentiment or topic indices.
 
 ## Repository structure
 
@@ -85,7 +121,8 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 │   ├── classification-baseline.md
 │   ├── topic-exploration.md
 │   ├── sentiment-analysis.md
-│   └── recommendation-engine.md
+│   ├── recommendation-engine.md
+│   └── visualisation.md
 ├── data/
 │   ├── README.md
 │   ├── sample/
@@ -106,7 +143,10 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 │   ├── 04_evaluate.R
 │   ├── 05_explore_topics.R
 │   ├── 06_sentiment.R
-│   └── 07_recommend_events.R
+│   ├── 07_recommend_events.R
+│   └── 08_visualise.R
+├── scripts/
+│   └── render_sample_outputs.R
 ├── output/
 │   ├── figures/
 │   └── examples/
@@ -115,7 +155,8 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
     ├── smoke_test_classification.R
     ├── smoke_test_topics.R
     ├── smoke_test_sentiment.R
-    └── smoke_test_recommendations.R
+    ├── smoke_test_recommendations.R
+    └── smoke_test_visualise.R
 ```
 
 ## Status
@@ -124,64 +165,62 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 
 The historical R script was reconstructed from Appendix 1A of the submitted report and frozen as [`original/reconstructed_year1_code.R`](original/reconstructed_year1_code.R). PDF line wrapping was repaired, but the historical programming and methodological logic is intentionally preserved.
 
-### Phase 2 — corrected foundation + separated analytical tasks
+### Phase 2 — end-to-end reconstruction implemented
 
-The corrected implementation now includes:
+The corrected reconstruction now includes:
 
-- project-relative data discovery instead of hard-coded local paths;
-- synthetic public-safe reflection and activity data;
-- reusable data loading functions;
-- preprocessing separated from modelling;
-- a transparent dictionary classifier for the five predefined interest categories;
+- project-relative loading instead of hard-coded local paths;
+- synthetic public-safe reflection and activity fixtures;
+- reusable preprocessing;
+- a transparent five-category dictionary classifier;
 - explicit ambiguous and unclassified outcomes;
-- evaluation against labelled synthetic fixtures;
-- optional corpus-level LDA topic exploration kept separate from category classification;
+- classification evaluation against labelled synthetic fixtures;
+- optional corpus-level LDA kept separate from category classification;
 - NRC sentiment as a separate descriptive layer;
-- an explainable activity recommender with evidence thresholds and `no_recommendation` outcomes;
-- smoke tests for foundation, classification, topic exploration, sentiment, and recommendation;
-- a GitHub Actions workflow that runs the R smoke tests on the reconstruction branch and pull requests to `main`.
+- an explainable recommender with evidence gates and `no_recommendation` outcomes;
+- a base-R visualisation layer for the main interpretable outputs;
+- smoke tests for all six stages;
+- GitHub Actions automation for the tests and CI-rendered figure artifacts.
 
-The loading, preprocessing, classification, evaluation, and recommendation modules use base R. Exploratory LDA intentionally adds the `topicmodels` dependency, while NRC sentiment is isolated behind the `syuzhet` dependency.
+The loading, preprocessing, classification, evaluation, recommendation, and visualisation modules use base R. Exploratory LDA intentionally adds the `topicmodels` dependency, while NRC sentiment is isolated behind the `syuzhet` dependency.
 
 ## What changed methodologically?
 
-The reconstruction separates analytical tasks that the Year 1 implementation mixed together.
-
 ### Category classification
 
-The Year 1 logic effectively treated an LDA topic number as if it were the same thing as a predefined category number. Phase 2 instead uses an explicit category dictionary as a simple classification baseline. Every score and matched term can be inspected.
+The Year 1 logic effectively treated an LDA topic number as a predefined category number. Phase 2 instead uses an explicit dictionary baseline, exposing category scores and matched evidence terms.
 
 ### Topic discovery
 
-LDA is now fitted once across the corpus and its outputs remain anonymously labelled `Topic 1`, `Topic 2`, and so on. Those topic indices are not automatically converted into the five predefined interest categories.
+LDA is fitted once across the corpus. Outputs remain neutrally labelled `Topic 1`, `Topic 2`, and so on. Topic indices are never automatically converted into the five predefined interest categories.
 
 ### Sentiment description
 
-NRC sentiment is now a separate lexical description. It reports emotion/polarity hits and rates per 100 words, but does not determine a student's interest category, infer personality, or label LDA topics.
+NRC output is treated as lexical description. Raw counts and length-normalised rates can be shown, but they do not determine interest categories or personality.
 
 ### Activity recommendation
 
-The Year 1 recommender broadly matched LDA top words against activity announcements. Phase 2 instead consumes the explicit classification result and activity metadata.
+The Year 1 recommender broadly matched LDA top words against activity announcements. Phase 2 requires sufficiently strong classification evidence, restricts candidate activities to the predicted category, ranks them using shared category evidence, and exposes the reasons for each recommendation. Weak evidence can produce no recommendation.
 
-A recommendation is produced only when classification evidence passes minimum score and margin thresholds. Candidate activities are restricted to the predicted category and ranked using shared category evidence. The output exposes the score, matched evidence terms, and reason. Weak evidence can produce `no_recommendation` rather than a forced suggestion.
+### Visualisation
 
-Sentiment scores and LDA topic numbers are intentionally excluded from recommendation ranking.
+The new plotting layer displays classification evidence, LDA topic terms, NRC rates, and recommendation scores without introducing new decision rules. Generated figures are derived outputs and remain ignored by Git by default.
 
-See [`docs/classification-baseline.md`](docs/classification-baseline.md), [`docs/topic-exploration.md`](docs/topic-exploration.md), [`docs/sentiment-analysis.md`](docs/sentiment-analysis.md), and [`docs/recommendation-engine.md`](docs/recommendation-engine.md).
+See [`docs/classification-baseline.md`](docs/classification-baseline.md), [`docs/topic-exploration.md`](docs/topic-exploration.md), [`docs/sentiment-analysis.md`](docs/sentiment-analysis.md), [`docs/recommendation-engine.md`](docs/recommendation-engine.md), and [`docs/visualisation.md`](docs/visualisation.md).
 
 ## Evaluation warning
 
-The five current reflection files and ten current activities are synthetic fixtures written specifically for this reconstruction. Their labels and pairings are test fixtures, not independently validated real-world ground truth.
+The five reflection files and ten activities in `data/sample/` are deliberately clear synthetic fixtures. Their labels and pairings are test fixtures, not independently validated real-world ground truth.
 
-Therefore, perfect results on these fixtures verify implementation behaviour only. They do not establish real-world classification accuracy, stable latent topics, psychological sentiment validity, or recommendation quality.
+Perfect results on them can verify implementation behaviour only. They do not establish real-world classification accuracy, stable latent topics, psychological sentiment validity, recommendation quality, or external validity of the plots.
 
-Meaningful performance claims require held-out data and independent evaluation.
+Meaningful performance claims require held-out data, independent labelling, and a larger corpus.
 
 ## Data policy
 
-The public repository does **not** publish the original ten reflection journals or the unredacted submitted report by default. The Phase 2 sample reflections and activity catalogue are synthetic test data written specifically for this reconstruction.
+The public repository does **not** publish the original ten reflection journals or the unredacted submitted report by default. The Phase 2 sample reflections and activity catalogue are synthetic data written specifically for this reconstruction.
 
-## Quick checks
+## Run the checks
 
 On a machine with R installed:
 
@@ -191,31 +230,36 @@ Rscript tests/smoke_test_classification.R
 Rscript tests/smoke_test_topics.R
 Rscript tests/smoke_test_sentiment.R
 Rscript tests/smoke_test_recommendations.R
+Rscript tests/smoke_test_visualise.R
 ```
 
-The optional analytical tests require:
+The optional analytical modules require:
 
 ```r
 install.packages(c("topicmodels", "syuzhet"))
 ```
 
-CI installs these packages automatically through `.github/workflows/r-tests.yml`.
+CI installs these packages through `.github/workflows/r-tests.yml` and uploads the rendered CI sample figures as a workflow artifact when available.
 
-Runtime results should be read from the repository's GitHub Actions checks rather than inferred from the presence of the workflow file alone.
+## Render the sample portfolio figures
 
-## Next methodological phase
+```bash
+Rscript scripts/render_sample_outputs.R
+```
 
-The original reflection-to-recommendation path is now reconstructed. The next module can focus on **interpretable visualisation** rather than adding more hidden modelling assumptions.
+This writes five PNG figures to `output/figures/sample/` by default:
 
-`08_visualise.R` should turn the existing transparent outputs into plots such as:
-
-- per-category classifier scores;
-- classification margins and uncertain cases;
-- neutral LDA topic-term summaries;
+- classification scores;
+- top-vs-runner-up classification evidence;
+- exploratory topic terms;
 - NRC sentiment rates;
-- recommendation score components and evidence terms.
+- explainable recommendation rankings.
 
-A later phase should add a genuinely held-out labelled evaluation set and a larger corpus before making substantive performance claims.
+Generated outputs are ignored by Git so source history stays focused on code and documentation.
+
+## Next phase
+
+The original reflection-to-recommendation workflow is now reconstructed end to end. The next meaningful work is **validation rather than adding more model complexity**: create a genuinely held-out labelled dataset, document the labelling protocol, test failure cases, and then compare the transparent baseline with alternative classifiers only if the data volume supports it.
 
 ## Historical note
 

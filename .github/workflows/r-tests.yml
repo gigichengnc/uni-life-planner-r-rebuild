@@ -14,7 +14,7 @@ permissions:
 jobs:
   smoke-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -43,3 +43,14 @@ jobs:
 
       - name: Run recommendation smoke test
         run: Rscript tests/smoke_test_recommendations.R
+
+      - name: Run visualisation smoke test
+        run: Rscript tests/smoke_test_visualise.R
+
+      - name: Upload rendered sample figures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-sample-figures
+          path: output/figures/ci/*.png
+          if-no-files-found: warn
