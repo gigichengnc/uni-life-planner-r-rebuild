@@ -10,6 +10,7 @@ The corrected implementation lives here and remains separate from `../original/`
 03_classify_interests.R
 04_evaluate.R
 05_explore_topics.R
+06_sentiment.R
 ```
 
 ### `01_load_data.R`
@@ -48,6 +49,21 @@ It:
 
 This module intentionally uses the `topicmodels` package. See [`../docs/topic-exploration.md`](../docs/topic-exploration.md).
 
+### `06_sentiment.R`
+
+Keeps NRC sentiment as a separate **descriptive** task rather than mixing it into category assignment or personality interpretation.
+
+It:
+
+- obtains the ten standard NRC emotion/polarity dimensions through `syuzhet`;
+- preserves raw lexicon-hit counts;
+- reports length-normalised rates per 100 words by default;
+- provides a simple descriptive summary of the highest-count core emotion and positive/negative balance;
+- represents ties and no-hit cases explicitly;
+- never uses sentiment to determine an interest category or LDA topic label.
+
+The sentiment layer is documented in [`../docs/sentiment-analysis.md`](../docs/sentiment-analysis.md).
+
 ## Quick checks
 
 From a machine with R installed:
@@ -56,28 +72,30 @@ From a machine with R installed:
 Rscript tests/smoke_test_phase2.R
 Rscript tests/smoke_test_classification.R
 Rscript tests/smoke_test_topics.R
+Rscript tests/smoke_test_sentiment.R
 ```
 
-The first test checks data loading and preprocessing. The second checks the dictionary classifier and evaluation pipeline on the five deliberately clear synthetic fixtures. The third checks that corpus-level LDA can fit and return structured topic outputs; it does **not** validate the topics as real-world constructs.
+The first test checks data loading and preprocessing. The second checks the dictionary classifier and evaluation pipeline on the five deliberately clear synthetic fixtures. The third checks that corpus-level LDA can fit and return structured topic outputs; it does **not** validate the topics as real-world constructs. The fourth checks the NRC sentiment output structure and simple polarity probes; it does **not** validate sentiment as a psychological measurement.
 
-The topic smoke test requires:
+The optional analytical modules require:
 
 ```r
-install.packages("topicmodels")
+install.packages(c("topicmodels", "syuzhet"))
 ```
 
-GitHub Actions installs this dependency automatically.
+GitHub Actions installs these dependencies automatically.
 
 ## Planned next modules
 
 ```text
-06_sentiment.R
 07_recommend_events.R
 08_visualise.R
 ```
 
-The methodological rule for the reconstruction is explicit:
+The methodological rules for the reconstruction are explicit:
 
 > **topic discovery is not category classification.**
 
-Classification has its own transparent scoring and evaluation path. LDA is optional exploratory analysis at corpus level only.
+> **sentiment description is not personality or interest classification.**
+
+Classification has its own transparent scoring and evaluation path. LDA is optional exploratory analysis at corpus level only. NRC sentiment is a separate lexical description with documented limitations.
