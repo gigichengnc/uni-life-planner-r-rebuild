@@ -53,11 +53,17 @@ jobs:
       - name: Run failure-analysis smoke test
         run: Rscript tests/smoke_test_failure_analysis.R
 
+      - name: Run controlled-experiment smoke test
+        run: Rscript tests/smoke_test_experiments.R
+
       - name: Render challenge benchmark tables
         run: Rscript scripts/run_challenge_evaluation.R output/examples/challenge
 
       - name: Render failure-analysis tables
         run: Rscript scripts/run_failure_analysis.R output/examples/failure-analysis
+
+      - name: Render controlled-experiment tables
+        run: Rscript scripts/run_baseline_experiments.R output/examples/experiments
 
       - name: Upload rendered sample figures
         if: always()
@@ -81,4 +87,12 @@ jobs:
         with:
           name: phase4-failure-analysis
           path: output/examples/failure-analysis/*.csv
+          if-no-files-found: warn
+
+      - name: Upload controlled-experiment tables
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5-controlled-experiments
+          path: output/examples/experiments/*.csv
           if-no-files-found: warn
