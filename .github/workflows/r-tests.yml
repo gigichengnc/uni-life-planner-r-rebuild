@@ -47,10 +47,24 @@ jobs:
       - name: Run visualisation smoke test
         run: Rscript tests/smoke_test_visualise.R
 
+      - name: Run locked challenge benchmark smoke test
+        run: Rscript tests/smoke_test_challenge.R
+
+      - name: Render challenge benchmark tables
+        run: Rscript scripts/run_challenge_evaluation.R output/examples/challenge
+
       - name: Upload rendered sample figures
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: phase2-sample-figures
           path: output/figures/ci/*.png
+          if-no-files-found: warn
+
+      - name: Upload challenge evaluation tables
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3-challenge-evaluation
+          path: output/examples/challenge/*.csv
           if-no-files-found: warn
