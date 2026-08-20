@@ -5,13 +5,36 @@
 # interest category). Category classification remains a separate task.
 
 require_topicmodels <- function() {
-  if (!requireNamespace("topicmodels", quietly = TRUE)) {
+  if (requireNamespace("topicmodels", quietly = TRUE)) {
+    return(invisible(TRUE))
+  }
+
+  namespace_error <- tryCatch(
+    {
+      loadNamespace("topicmodels")
+      NULL
+    },
+    error = function(e) conditionMessage(e)
+  )
+
+  installed <- "topicmodels" %in% rownames(installed.packages())
+
+  if (isTRUE(installed)) {
     stop(
-      "Package 'topicmodels' is required for LDA exploration. Install it with ",
-      "install.packages('topicmodels')."
+      "Package 'topicmodels' is installed but its namespace could not be loaded. ",
+      "Underlying error: ", namespace_error, ". ",
+      "On Linux CI, verify that the GNU Scientific Library (GSL) runtime and ",
+      "development libraries are available.",
+      call. = FALSE
     )
   }
-  invisible(TRUE)
+
+  stop(
+    "Package 'topicmodels' is required for LDA exploration but is not available. ",
+    "Install it with install.packages('topicmodels'). ",
+    "Namespace lookup error: ", namespace_error,
+    call. = FALSE
+  )
 }
 
 prepare_topic_dtm <- function(
