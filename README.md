@@ -68,7 +68,7 @@ These problems are documented in [`docs/known-problems.md`](docs/known-problems.
 ├── .gitignore
 ├── original/
 │   ├── README.md
-│   └── original_from_report.R
+│   └── reconstructed_year1_code.R
 ├── docs/
 │   ├── reconstruction-notes.md
 │   ├── known-problems.md
@@ -76,33 +76,67 @@ These problems are documented in [`docs/known-problems.md`](docs/known-problems.
 ├── data/
 │   ├── README.md
 │   ├── sample/
+│   │   ├── activities.csv
+│   │   ├── manifest.csv
+│   │   └── reflections/
+│   │       ├── reflection_01.txt
+│   │       ├── reflection_02.txt
+│   │       ├── reflection_03.txt
+│   │       ├── reflection_04.txt
+│   │       └── reflection_05.txt
 │   └── private/
 ├── R/
-│   └── README.md
+│   ├── README.md
+│   ├── 01_load_data.R
+│   └── 02_preprocess.R
 ├── output/
 │   ├── figures/
 │   └── examples/
 └── tests/
+    └── smoke_test_phase2.R
 ```
 
 ## Status
 
-**Phase 1 — reconstruction and audit.**
+### Phase 1 — reconstructed and frozen
 
-The original R script has been reconstructed from Appendix 1A of the submitted report. The public-facing repository should not yet include the original reflection journals or the unredacted submitted report because they contain personal information and/or material whose redistribution rights should be checked first.
+The historical R script was reconstructed from Appendix 1A of the submitted report and frozen as [`original/reconstructed_year1_code.R`](original/reconstructed_year1_code.R). PDF line wrapping was repaired, but the historical programming and methodological logic is intentionally preserved.
 
-## Next phase
+### Phase 2 — foundation in progress
+
+The corrected implementation has started with the parts that should be fixed before any new modelling is added:
+
+- project-relative data discovery instead of hard-coded local paths;
+- synthetic public-safe reflection and activity data;
+- reusable data loading functions;
+- preprocessing separated from modelling;
+- explicit token and term-count outputs;
+- a small smoke test for the corrected foundation.
+
+The first two corrected modules use base R only, making the transformations easier to inspect and reducing unnecessary dependency problems.
+
+## Data policy
+
+The public repository does **not** publish the original ten reflection journals or the unredacted submitted report by default. The Phase 2 sample reflections and activity catalogue are synthetic test data written specifically for this reconstruction.
+
+## Next methodological phase
 
 The next implementation should separate **topic discovery** from **category classification**:
 
 - corpus-level exploratory topic modelling, if LDA is retained;
-- a transparent dictionary/rule-based baseline for the five predefined Metro Faith-style categories;
-- explicit evaluation against manually labelled reflections;
-- modular R functions;
-- project-relative paths;
-- reproducible dependencies;
-- synthetic/redacted sample data only.
+- a transparent dictionary/rule-based baseline for the five predefined categories;
+- explicit evaluation against labelled synthetic/redacted reflections;
+- sentiment analysis as a separate task;
+- recommendation logic based on explicit scores rather than arbitrary topic-number alignment.
+
+## Quick foundation check
+
+On a machine with R installed:
+
+```bash
+Rscript tests/smoke_test_phase2.R
+```
 
 ## Historical note
 
-This is a retrospective learning repository. The `original/` directory is preserved to show what was actually attempted at the end of Year 1; corrected code should live separately under `R/` rather than silently replacing the historical version.
+This is a retrospective learning repository. The `original/` directory is frozen to show what was actually attempted at the end of Year 1; corrected code belongs separately under `R/` rather than silently replacing the historical version.
