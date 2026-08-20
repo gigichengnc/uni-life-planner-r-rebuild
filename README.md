@@ -4,7 +4,7 @@ A retrospective reconstruction and redesign of a Year 1 course project from **ST
 
 The original project, **UNI LIFE PLANNER**, explored whether R-based text analytics could turn student reflections on university activities and competitions into useful signals about interests, emotions, and possible future activities.
 
-This repository preserves the original attempt while rebuilding it as a more reproducible and statistically defensible R project. The intended repository name is **`uni-life-planner-r-rebuild`**.
+This repository preserves the original attempt while rebuilding it as a more reproducible and statistically defensible R project. The rebuilt repository is **`uni-life-planner-r-rebuild`**.
 
 The project documents:
 
@@ -81,7 +81,8 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 │   ├── reconstruction-notes.md
 │   ├── known-problems.md
 │   ├── statistical-redesign.md
-│   └── classification-baseline.md
+│   ├── classification-baseline.md
+│   └── topic-exploration.md
 ├── data/
 │   ├── README.md
 │   ├── sample/
@@ -99,13 +100,15 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 │   ├── 01_load_data.R
 │   ├── 02_preprocess.R
 │   ├── 03_classify_interests.R
-│   └── 04_evaluate.R
+│   ├── 04_evaluate.R
+│   └── 05_explore_topics.R
 ├── output/
 │   ├── figures/
 │   └── examples/
 └── tests/
     ├── smoke_test_phase2.R
-    └── smoke_test_classification.R
+    ├── smoke_test_classification.R
+    └── smoke_test_topics.R
 ```
 
 ## Status
@@ -114,7 +117,7 @@ The purpose of the rebuild is not to hide those mistakes. It is to make the impr
 
 The historical R script was reconstructed from Appendix 1A of the submitted report and frozen as [`original/reconstructed_year1_code.R`](original/reconstructed_year1_code.R). PDF line wrapping was repaired, but the historical programming and methodological logic is intentionally preserved.
 
-### Phase 2 — corrected foundation + transparent classification baseline
+### Phase 2 — corrected foundation + separated analytical tasks
 
 The corrected implementation now includes:
 
@@ -126,10 +129,11 @@ The corrected implementation now includes:
 - a transparent dictionary classifier for the five predefined interest categories;
 - explicit ambiguous and unclassified outcomes;
 - evaluation against labelled synthetic fixtures;
-- smoke tests for the foundation and classification pipeline;
+- optional corpus-level LDA topic exploration kept separate from category classification;
+- smoke tests for the foundation, classification pipeline, and topic-exploration pipeline;
 - a GitHub Actions workflow that runs the R smoke tests on the reconstruction branch and pull requests to `main`.
 
-The corrected modules currently use base R only, making the transformations and scoring rules easy to inspect.
+The loading, preprocessing, classification, and evaluation modules use base R. Exploratory LDA intentionally adds the `topicmodels` dependency and is isolated in its own module.
 
 ## What changed methodologically?
 
@@ -137,13 +141,15 @@ The key correction is that **topic discovery and category classification are sep
 
 The Year 1 logic effectively treated an LDA topic number as if it were the same thing as a predefined category number. Phase 2 instead uses an explicit category dictionary as a simple classification baseline. Every score and matched term can be inspected.
 
-See [`docs/classification-baseline.md`](docs/classification-baseline.md).
+LDA is now fitted once across the corpus and its outputs remain anonymously labelled `Topic 1`, `Topic 2`, and so on. Those topic indices are not automatically converted into the five predefined interest categories.
+
+See [`docs/classification-baseline.md`](docs/classification-baseline.md) and [`docs/topic-exploration.md`](docs/topic-exploration.md).
 
 ## Evaluation warning
 
 The five current reflection files are synthetic fixtures written specifically for this reconstruction. Their `intended_theme` labels are test labels, not independently validated real-world ground truth.
 
-Therefore, a perfect result on these fixtures would verify the implementation only. It must not be presented as evidence of 100% real-world classification accuracy. A meaningful performance claim requires a separate labelled evaluation dataset that was not written to fit the dictionary.
+Therefore, a perfect classification result on these fixtures would verify the implementation only. Likewise, LDA output from five synthetic documents is an architectural demonstration, not evidence of stable latent topics. Meaningful performance or topic claims require substantially better evaluation data.
 
 ## Data policy
 
@@ -156,19 +162,21 @@ On a machine with R installed:
 ```bash
 Rscript tests/smoke_test_phase2.R
 Rscript tests/smoke_test_classification.R
+Rscript tests/smoke_test_topics.R
 ```
 
-CI is configured through `.github/workflows/r-tests.yml`. Runtime results should be read from the repository's GitHub Actions checks rather than inferred from the presence of the workflow file alone.
+The topic test additionally requires the `topicmodels` package. CI installs it automatically through `.github/workflows/r-tests.yml`.
+
+Runtime results should be read from the repository's GitHub Actions checks rather than inferred from the presence of the workflow file alone.
 
 ## Next methodological phase
 
-The next work can add separate analytical modules without mixing their assumptions:
+The next work can add the remaining analytical modules without mixing their assumptions:
 
-- optional corpus-level exploratory topic modelling;
-- sentiment analysis;
+- sentiment analysis as a separate descriptive task;
 - activity recommendation using explicit category/term scores;
-- visualisation;
-- later, a genuinely held-out labelled evaluation set.
+- visualisation of interpretable outputs;
+- later, a genuinely held-out labelled evaluation set and a larger corpus for more defensible modelling.
 
 ## Historical note
 
