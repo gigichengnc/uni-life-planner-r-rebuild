@@ -15,6 +15,7 @@ The corrected implementation lives here and remains separate from `../original/`
 08_visualise.R
 09_evaluate_challenge.R
 10_analyse_failures.R
+11_controlled_experiments.R
 ```
 
 ### `01_load_data.R`
@@ -51,25 +52,33 @@ Renders interpretable PNG outputs for classification evidence, topic terms, sent
 
 ### `09_evaluate_challenge.R`
 
-Evaluates the unchanged transparent classifier on `data/evaluation/`, benchmark version `v1-locked-2026-08-20`.
-
-The challenge evaluation checks the full decision: expected status, intended theme, expected top/tied categories, and results by challenge type. It intentionally does not require a perfect score.
+Evaluates the unchanged transparent classifier on `data/evaluation/`, benchmark version `v1-locked-2026-08-20`. It checks expected status, intended theme, expected top/tied categories, and results by challenge type. It intentionally does not require a perfect score.
 
 See [`../docs/evaluation-challenge.md`](../docs/evaluation-challenge.md).
 
 ### `10_analyse_failures.R`
 
-Adds Phase 4 diagnosis without changing the classifier or locked benchmark.
+Adds Phase 4 diagnosis without changing the classifier or locked benchmark. It assigns incorrect cases a documented diagnostic hypothesis, groups failures into broader families, and creates an improvement queue without automatically changing model code.
 
-It:
+See [`../docs/failure-analysis.md`](../docs/failure-analysis.md).
 
-- assigns every incorrect challenge case one primary diagnostic hypothesis;
-- groups failures into broader families such as lexical coverage, negation, semantic context, intent weighting, multi-label/abstention, calibration, and scope;
-- records priority, complexity hints, and suggested investigations;
-- creates an improvement queue without automatically changing model code;
-- preserves correct cases as `failure_mode = "correct"` so the full benchmark remains auditable.
+### `11_controlled_experiments.R`
 
-The taxonomy is rule-based and should be interpreted as disciplined debugging support rather than proven causal explanation. See [`../docs/failure-analysis.md`](../docs/failure-analysis.md).
+Runs Phase 5 controlled validation experiments without replacing the baseline classifier.
+
+Three pre-declared variants are compared:
+
+```text
+A  current dictionary baseline
+B  A + local negation handling
+C  B + min_top_score = 2 + ambiguity_margin = 1
+```
+
+Variant A is checked against `03_classify_interests.R` so the experiment cannot silently redefine the baseline. Variant B ignores dictionary terms that fall within a three-token local negation window after `not`, `no`, `never`, or `without`. Variant C additionally allows weak-evidence abstention and near-tie ambiguity.
+
+The experiment produces paired before/after case comparisons, including improvements **and regressions**. It does not perform threshold search, does not consume benchmark labels during prediction, and never auto-promotes a variant.
+
+Because the Phase 3 benchmark has already been inspected during failure analysis, Phase 5 explicitly treats it as **validation data**. See [`../docs/controlled-experiments.md`](../docs/controlled-experiments.md).
 
 ## Quick checks
 
@@ -82,9 +91,10 @@ Rscript tests/smoke_test_recommendations.R
 Rscript tests/smoke_test_visualise.R
 Rscript tests/smoke_test_challenge.R
 Rscript tests/smoke_test_failure_analysis.R
+Rscript tests/smoke_test_experiments.R
 ```
 
-The Phase 3/4 tests verify benchmark loading, evaluation, diagnosis, and reporting structure. They do **not** assert that the classifier must achieve a particular benchmark accuracy.
+The Phase 3–5 tests verify benchmark loading, evaluation, diagnosis, experiment wiring, and reporting structure. They do **not** require a particular accuracy or require an experiment to beat the baseline.
 
 Optional topic/sentiment modules require:
 
@@ -114,6 +124,12 @@ Failure register and improvement queue:
 Rscript scripts/run_failure_analysis.R
 ```
 
+Controlled experiment tables:
+
+```bash
+Rscript scripts/run_baseline_experiments.R
+```
+
 Generated figures and CSV outputs remain ignored by Git and are uploaded as CI artifacts when available.
 
 ## Methodological rules
@@ -129,3 +145,5 @@ Generated figures and CSV outputs remain ignored by Git and are uploaded as CI a
 > **a benchmark is not held out anymore once you tune repeatedly against it.**
 
 > **failure analysis should diagnose the baseline before changing it.**
+
+> **an experimental variant is not promoted merely because its validation score is higher.**
