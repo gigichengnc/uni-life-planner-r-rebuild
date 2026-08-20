@@ -6,13 +6,25 @@ The original project, **UNI LIFE PLANNER**, explored whether R-based text analyt
 
 This repository preserves the original attempt while rebuilding it as a more reproducible and statistically defensible R project. The rebuilt repository is **`uni-life-planner-r-rebuild`**.
 
-The project documents:
+The project now documents the complete learning path:
 
-1. what the original Year 1 implementation attempted;
-2. where its statistical and programming problems occurred;
-3. how those problems were redesigned without erasing the historical work;
-4. how the corrected pipeline can be tested, visualised, and stress-tested;
-5. where the transparent baseline still fails and how those failures can be diagnosed before model escalation.
+```text
+Year 1 implementation
+        ↓
+problem diagnosis
+        ↓
+methodological redesign
+        ↓
+modular rebuild
+        ↓
+tests + interpretable outputs
+        ↓
+locked challenge benchmark
+        ↓
+failure analysis
+        ↓
+controlled baseline experiments
+```
 
 ## Original question
 
@@ -54,7 +66,7 @@ The Year 1 implementation contains several useful learning examples:
 - an unsupervised LDA topic index treated as if it were a predefined category label;
 - inconsistent descriptions of the number of categories/topics;
 - LDA fitted separately to very small individual documents;
-- human "matchness" judgments described as accuracy without a formal evaluation protocol;
+- human “matchness” judgments described as accuracy without a formal evaluation protocol;
 - duplicated sentiment-analysis code;
 - an undeclared `RColorBrewer` dependency despite calling `brewer.pal()`;
 - broad regex activity matching against LDA top words;
@@ -62,28 +74,6 @@ The Year 1 implementation contains several useful learning examples:
 - privacy/copyright risks if original student reflections are published directly.
 
 These problems are documented in [`docs/known-problems.md`](docs/known-problems.md).
-
-The rebuild turns that into an inspectable learning sequence:
-
-```text
-historical implementation
-        ↓
-problem diagnosis
-        ↓
-methodological redesign
-        ↓
-modular implementation
-        ↓
-explicit tests
-        ↓
-interpretable outputs
-        ↓
-locked failure-case benchmark
-        ↓
-failure diagnosis
-        ↓
-model decision gate
-```
 
 ## Rebuilt architecture
 
@@ -110,6 +100,9 @@ Locked synthetic challenge evaluation
       |
       v
 Failure taxonomy + improvement queue
+      |
+      v
+Controlled validation experiments
 ```
 
 The analytical tasks remain separate. LDA topic numbers are not category labels, sentiment is not personality, and recommendation does not silently consume sentiment or topic indices.
@@ -133,7 +126,8 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
 │   ├── recommendation-engine.md
 │   ├── visualisation.md
 │   ├── evaluation-challenge.md
-│   └── failure-analysis.md
+│   ├── failure-analysis.md
+│   └── controlled-experiments.md
 ├── data/
 │   ├── README.md
 │   ├── sample/
@@ -158,11 +152,13 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
 │   ├── 07_recommend_events.R
 │   ├── 08_visualise.R
 │   ├── 09_evaluate_challenge.R
-│   └── 10_analyse_failures.R
+│   ├── 10_analyse_failures.R
+│   └── 11_controlled_experiments.R
 ├── scripts/
 │   ├── render_sample_outputs.R
 │   ├── run_challenge_evaluation.R
-│   └── run_failure_analysis.R
+│   ├── run_failure_analysis.R
+│   └── run_baseline_experiments.R
 └── tests/
     ├── smoke_test_phase2.R
     ├── smoke_test_classification.R
@@ -171,7 +167,8 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
     ├── smoke_test_recommendations.R
     ├── smoke_test_visualise.R
     ├── smoke_test_challenge.R
-    └── smoke_test_failure_analysis.R
+    ├── smoke_test_failure_analysis.R
+    └── smoke_test_experiments.R
 ```
 
 ## Status
@@ -188,51 +185,39 @@ The loading, preprocessing, classification, evaluation, recommendation, and visu
 
 ### Phase 3 — locked synthetic challenge benchmark
 
-The clear Phase 2 fixtures are not enough to evaluate failure behaviour, so Phase 3 adds benchmark version **`v1-locked-2026-08-20`** with 12 harder synthetic reflections.
+Phase 3 adds benchmark version **`v1-locked-2026-08-20`** with 12 harder synthetic reflections covering paraphrase, negation/context, mixed-domain, off-domain, and surface-keyword-versus-purpose cases.
 
-The challenge set includes paraphrase, negation/context, mixed-domain, off-domain, and surface-keyword-versus-purpose cases. It evaluates the full decision: `classified` / `ambiguous` / `unclassified`, intended theme, and expected top or tied categories.
-
-This benchmark is **synthetic and deliberately designed to probe known weaknesses**. It is not an unbiased external test set. Once created, v1 is treated as locked; rewriting cases to improve a later score would invalidate the benchmark logic. See [`docs/evaluation-challenge.md`](docs/evaluation-challenge.md).
+The benchmark is synthetic and deliberately probes known weaknesses. It is not an unbiased external test set, and its text/labels are treated as locked rather than rewritten to improve later scores. See [`docs/evaluation-challenge.md`](docs/evaluation-challenge.md).
 
 ### Phase 4 — failure analysis before model escalation
 
-Phase 4 keeps both the classifier and the locked benchmark unchanged. `R/10_analyse_failures.R` converts incorrect challenge decisions into a documented diagnostic taxonomy and an investigation queue.
+`R/10_analyse_failures.R` converts incorrect challenge decisions into a documented diagnostic taxonomy and investigation queue without changing the classifier or benchmark.
 
-Example diagnostic families include lexical coverage, negation/compositional language, semantic context, intent weighting, multi-label/abstention behaviour, calibration, and off-domain false positives.
+Diagnostic families include lexical coverage, negation/compositional language, semantic context, intent weighting, multi-label/abstention behaviour, calibration, and off-domain false positives. These diagnoses are structured hypotheses about error patterns, not proven causal explanations. See [`docs/failure-analysis.md`](docs/failure-analysis.md).
 
-Each diagnosis is a **hypothesis about the observable error pattern**, not proof of the underlying causal mechanism. Suggested next steps are deliberately advisory: Phase 4 does not automatically edit the dictionary, tune thresholds, or replace the classifier.
+### Phase 5 — controlled validation experiments
 
-See [`docs/failure-analysis.md`](docs/failure-analysis.md).
+Phase 5 tests the smallest justified interventions before considering a more complex model. It preserves `R/03_classify_interests.R` as the reference baseline and compares three pre-declared variants:
 
-## Methodological rules
+```text
+A  current dictionary baseline
+B  A + local three-token negation handling
+C  B + minimum top score 2 + ambiguity margin 1
+```
 
-### Category classification
+Variant A is checked against the existing classifier so the experiment cannot silently redefine the baseline. Variant B probes the `negation_blindness` hypothesis. Variant C probes whether weak evidence should abstain and whether near-tied mixed-domain evidence should be represented as ambiguous.
 
-The Year 1 logic effectively treated an LDA topic number as a predefined category number. The rebuild instead uses an explicit dictionary baseline that exposes category scores and matched evidence terms.
+No threshold grid search is used. Benchmark labels are used only for evaluation, never prediction. The experiment reports case-level **improvements and regressions**, and no variant is automatically promoted based on validation accuracy alone.
 
-### Topic discovery
+Because the benchmark has already been inspected in Phase 4, Phase 5 explicitly treats it as **validation data**, not a fresh held-out test set. See [`docs/controlled-experiments.md`](docs/controlled-experiments.md).
 
-LDA is fitted across the corpus and stays neutrally labelled `Topic 1`, `Topic 2`, and so on. Topic indices are never automatically converted into interest categories.
-
-### Sentiment description
-
-NRC output is treated as lexical description. It does not determine an interest category or infer personality.
-
-### Activity recommendation
-
-Recommendations require sufficiently strong classification evidence, restrict candidates to the predicted category, rank them using shared evidence, and can return `no_recommendation` when evidence is weak. Sentiment and LDA topic numbers are excluded from ranking.
-
-### Challenge evaluation and failure analysis
-
-The locked benchmark deliberately asks whether the transparent classifier fails gracefully. Phase 4 then diagnoses observed failures without changing the benchmark or classifier. If later changes are repeatedly designed while looking at this benchmark, it becomes validation data and a new unseen test set is required for external claims.
+A supervised/context-aware classifier remains deferred until there is enough independently labelled data to justify it.
 
 ## Evaluation warning
 
 `data/sample/` contains deliberately easy synthetic fixtures. `data/evaluation/` is harder and locked, but it is still synthetic and was authored specifically for this project.
 
-Neither dataset supports a claim of real-world classification accuracy. A genuine external performance claim would require independently labelled, unseen data from a broader population and a clearly documented labelling protocol.
-
-The Phase 4 taxonomy is also rule-based. It is useful for disciplined debugging, not a scientifically validated causal analysis of model errors.
+Neither dataset supports a claim of real-world classification accuracy. Repeated design decisions based on the challenge benchmark make it validation data. A genuine external performance claim requires a new independently labelled unseen test set from a broader population and a clearly documented labelling protocol.
 
 ## Run the checks
 
@@ -245,6 +230,7 @@ Rscript tests/smoke_test_recommendations.R
 Rscript tests/smoke_test_visualise.R
 Rscript tests/smoke_test_challenge.R
 Rscript tests/smoke_test_failure_analysis.R
+Rscript tests/smoke_test_experiments.R
 ```
 
 Optional analytical modules require:
@@ -253,7 +239,7 @@ Optional analytical modules require:
 install.packages(c("topicmodels", "syuzhet"))
 ```
 
-CI installs these packages and uploads rendered figures, challenge-evaluation tables, and failure-analysis tables as workflow artifacts when available.
+CI installs these packages and uploads rendered figures plus Phase 3–5 CSV artifacts when available.
 
 ## Generate derived outputs
 
@@ -275,13 +261,30 @@ Failure diagnosis and improvement queue:
 Rscript scripts/run_failure_analysis.R
 ```
 
+Controlled A/B/C experiment tables:
+
+```bash
+Rscript scripts/run_baseline_experiments.R
+```
+
+The Phase 5 runner writes:
+
+```text
+variant-settings.csv
+variant-summary.csv
+case-results.csv
+by-challenge-type.csv
+paired-comparison.csv
+paired-summary.csv
+```
+
 Generated PNG/CSV outputs are ignored by Git so source history stays focused on code, fixtures, and documentation.
 
-## Next phase
+## Next decision gate
 
-The next phase should be a **controlled model-decision experiment**, not automatic escalation. Review the Phase 4 failure register first, then choose the smallest justified intervention: a transparent phrase/negation rule, calibrated abstention or multi-label logic, evidence-supported dictionary changes, or a supervised/context-aware classifier only if enough independently labelled data exists.
+Phase 5 should answer whether either transparent intervention deserves to become a **candidate baseline**. The decision should consider validation improvement, regressions, interpretability, and whether the mechanism is likely to generalise—not only the highest score.
 
-Any model change should be recorded separately from the locked benchmark, and repeated tuning against the benchmark should be treated as validation rather than fresh testing.
+If a candidate is promoted later, the current baseline should remain reproducible, the change should be versioned explicitly, and a new unseen independently labelled test set should be created before making external performance claims.
 
 ## Historical note
 
