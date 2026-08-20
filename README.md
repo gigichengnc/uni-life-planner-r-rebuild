@@ -26,39 +26,13 @@ failure analysis
 controlled baseline experiments
         ↓
 model decision review
+        ↓
+external-evaluation protocol
 ```
 
 ## Original question
 
 Can student event reflections be processed in R to identify themes, sentiment, and possible activity recommendations?
-
-## Original pipeline
-
-```text
-Student reflection text
-        |
-        v
-Text preprocessing in R
-        |
-        v
-Document-Term Matrix
-        |
-        v
-LDA topic modelling + top terms
-        |
-        v
-Manually named interest category
-        |
-        +--> Word cloud
-        |
-        +--> NRC sentiment analysis
-        |
-        v
-Keyword matching against activity announcements
-        |
-        v
-Suggested student activities
-```
 
 ## Why rebuild it?
 
@@ -68,7 +42,7 @@ The Year 1 implementation contains several useful learning examples:
 - an unsupervised LDA topic index treated as if it were a predefined category label;
 - inconsistent descriptions of the number of categories/topics;
 - LDA fitted separately to very small individual documents;
-- human “matchness” judgments described as accuracy without a formal evaluation protocol;
+- human "matchness" judgments described as accuracy without a formal evaluation protocol;
 - duplicated sentiment-analysis code;
 - an undeclared `RColorBrewer` dependency despite calling `brewer.pal()`;
 - broad regex activity matching against LDA top words;
@@ -108,6 +82,9 @@ Controlled validation experiments
       |
       v
 Model decision review
+      |
+      v
+Independent-labelling + unseen-test protocol
 ```
 
 The analytical tasks remain separate. LDA topic numbers are not category labels, sentiment is not personality, and recommendation does not silently consume sentiment or topic indices.
@@ -119,8 +96,6 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
 ├── README.md
 ├── .github/workflows/r-tests.yml
 ├── original/
-│   ├── README.md
-│   └── reconstructed_year1_code.R
 ├── docs/
 │   ├── reconstruction-notes.md
 │   ├── known-problems.md
@@ -133,20 +108,17 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
 │   ├── evaluation-challenge.md
 │   ├── failure-analysis.md
 │   ├── controlled-experiments.md
-│   └── model-decision-review.md
+│   ├── model-decision-review.md
+│   └── external-evaluation-protocol.md
 ├── data/
-│   ├── README.md
 │   ├── sample/
-│   │   ├── activities.csv
-│   │   ├── manifest.csv
-│   │   └── reflections/
 │   ├── evaluation/
+│   ├── external-evaluation/
 │   │   ├── README.md
-│   │   ├── labels.csv
-│   │   └── reflections/
-│   │       ├── eval_01.txt
-│   │       ├── ...
-│   │       └── eval_12.txt
+│   │   ├── dataset-register-template.csv
+│   │   ├── annotations-template.csv
+│   │   ├── adjudicated-labels-template.csv
+│   │   └── private/
 │   └── private/
 ├── R/
 │   ├── 01_load_data.R
@@ -159,12 +131,14 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
 │   ├── 08_visualise.R
 │   ├── 09_evaluate_challenge.R
 │   ├── 10_analyse_failures.R
-│   └── 11_controlled_experiments.R
+│   ├── 11_controlled_experiments.R
+│   └── 12_validate_external_labels.R
 ├── scripts/
 │   ├── render_sample_outputs.R
 │   ├── run_challenge_evaluation.R
 │   ├── run_failure_analysis.R
-│   └── run_baseline_experiments.R
+│   ├── run_baseline_experiments.R
+│   └── validate_external_evaluation.R
 └── tests/
     ├── smoke_test_phase2.R
     ├── smoke_test_classification.R
@@ -174,36 +148,33 @@ The analytical tasks remain separate. LDA topic numbers are not category labels,
     ├── smoke_test_visualise.R
     ├── smoke_test_challenge.R
     ├── smoke_test_failure_analysis.R
-    └── smoke_test_experiments.R
+    ├── smoke_test_experiments.R
+    └── smoke_test_external_labels.R
 ```
 
 ## Status
 
 ### Phase 1 — reconstructed and frozen
 
-The historical R script was reconstructed from Appendix 1A of the submitted report and frozen as [`original/reconstructed_year1_code.R`](original/reconstructed_year1_code.R). PDF line wrapping was repaired, but the historical programming and methodological logic is intentionally preserved.
+The historical R script was reconstructed from Appendix 1A of the submitted report and frozen under `original/`. PDF line wrapping was repaired, but the historical programming and methodological logic is intentionally preserved.
 
 ### Phase 2 — end-to-end reconstruction implemented
 
 The corrected reconstruction includes project-relative loading, transparent preprocessing, a five-category dictionary classifier, explicit `ambiguous` / `unclassified` outcomes, corpus-level exploratory LDA, separate NRC sentiment description, explainable activity recommendation, base-R visualisation, smoke tests, and GitHub Actions automation.
 
-The loading, preprocessing, classification, evaluation, recommendation, and visualisation modules use base R. Exploratory LDA adds the `topicmodels` dependency; NRC sentiment is isolated behind `syuzhet`.
-
 ### Phase 3 — locked synthetic challenge benchmark
 
-Phase 3 adds benchmark version **`v1-locked-2026-08-20`** with 12 harder synthetic reflections covering paraphrase, negation/context, mixed-domain, off-domain, and surface-keyword-versus-purpose cases.
+Benchmark version **`v1-locked-2026-08-20`** adds 12 harder synthetic reflections covering paraphrase, negation/context, mixed-domain, off-domain, and surface-keyword-versus-purpose cases.
 
-The benchmark is synthetic and deliberately probes known weaknesses. It is not an unbiased external test set, and its text/labels are treated as locked rather than rewritten to improve later scores. See [`docs/evaluation-challenge.md`](docs/evaluation-challenge.md).
+It is synthetic and challenge-oriented, not an unbiased external test set.
 
-### Phase 4 — failure analysis before model escalation
+### Phase 4 — failure analysis
 
 `R/10_analyse_failures.R` converts incorrect challenge decisions into a documented diagnostic taxonomy and investigation queue without changing the classifier or benchmark.
 
-Diagnostic families include lexical coverage, negation/compositional language, semantic context, intent weighting, multi-label/abstention behaviour, calibration, and off-domain false positives. These diagnoses are structured hypotheses about error patterns, not proven causal explanations. See [`docs/failure-analysis.md`](docs/failure-analysis.md).
-
 ### Phase 5 — controlled validation experiments
 
-Phase 5 tests the smallest justified interventions before considering a more complex model. It preserves `R/03_classify_interests.R` as the reference baseline and compares three pre-declared variants:
+Three pre-declared variants were compared:
 
 ```text
 A  current dictionary baseline
@@ -211,29 +182,36 @@ B  A + local three-token negation handling
 C  B + minimum top score 2 + ambiguity margin 1
 ```
 
-Variant A is checked against the existing classifier so the experiment cannot silently redefine the baseline. Variant B probes the `negation_blindness` hypothesis. Variant C probes whether weak evidence should abstain and whether near-tied mixed-domain evidence should be represented as ambiguous.
+The model-decision review retains **Variant A**. Deterministic reproduction from repository definitions gives A = **8/12**, B = **8/12**, and C = **8/12** correct validation decisions. B changes no decisions; C fixes one case and regresses one case. These are validation results on authored synthetic cases, not external accuracy claims. See [`docs/model-decision-review.md`](docs/model-decision-review.md).
 
-No threshold grid search is used. Benchmark labels are used only for evaluation, never prediction. The experiment reports case-level **improvements and regressions**, and no variant is automatically promoted based on validation accuracy alone.
+### Phase 6 — independent labelling and external-test protocol
 
-Because the benchmark has already been inspected in Phase 4, Phase 5 explicitly treats it as **validation data**, not a fresh held-out test set. See [`docs/controlled-experiments.md`](docs/controlled-experiments.md).
+Phase 6 deliberately does **not** invent another synthetic "external" test set.
 
-### Phase 5 model decision — retain A
+Instead it defines the process required before the project can make a fresh performance claim:
 
-The model-decision review retains **Variant A** as the reference baseline and does not promote B or C.
+- at least two independent first-round annotators per reflection;
+- annotators do not see model predictions, scores, dictionary terms, or failure diagnoses;
+- `classified`, `ambiguous`, and `unclassified` are all valid outcomes;
+- primary and secondary category evidence is recorded explicitly;
+- confidence and short rationales are preserved;
+- exact first-round agreement is measured;
+- disagreements enter an adjudication queue rather than being silently overwritten;
+- final adjudicated labels are versioned and frozen before model evaluation;
+- a dataset registry records whether each case was first seen after model freeze;
+- real external reflection text and annotation exports remain private by default.
 
-A deterministic reproduction from the repository definitions gives A = **8/12**, B = **8/12**, and C = **8/12** correct validation decisions. Variant B changes no decisions on the 12 locked cases. Variant C fixes `eval_12` but regresses `eval_11`, producing one improvement and one regression with no net gain.
+Public schema files live under `data/external-evaluation/`; real material belongs in the git-ignored `data/external-evaluation/private/` directory. See [`docs/external-evaluation-protocol.md`](docs/external-evaluation-protocol.md).
 
-The review also shows why score alone is not enough: C moves more cases into ambiguous/unclassified states, but it still does not solve the lexical/context failures in `eval_01`, `eval_08`, or `eval_10`.
-
-These numbers are validation results on authored synthetic cases, not external accuracy claims. At the time of the review, a push-triggered GitHub Actions run was not available through the connected GitHub interface, so the R-generated Phase 5 artifact remains the runtime cross-check. See [`docs/model-decision-review.md`](docs/model-decision-review.md).
-
-A supervised/context-aware classifier remains deferred until there is enough independently labelled data to justify it.
+`R/12_validate_external_labels.R` checks schema/process consistency and can build an adjudication queue. It cannot prove that the data were genuinely unseen or that annotators were truly independent; those remain governance requirements that must be documented honestly.
 
 ## Evaluation warning
 
-`data/sample/` contains deliberately easy synthetic fixtures. `data/evaluation/` is harder and locked, but it is still synthetic and was authored specifically for this project.
+`data/sample/` contains deliberately easy synthetic fixtures. `data/evaluation/` is harder and locked but was still authored specifically for this project and has already been used for model development.
 
-Neither dataset supports a claim of real-world classification accuracy. Repeated design decisions based on the challenge benchmark make it validation data. A genuine external performance claim requires a new independently labelled unseen test set from a broader population and a clearly documented labelling protocol.
+Neither dataset supports a claim of real-world classification accuracy.
+
+A genuine external performance claim requires a new independently labelled unseen test set collected and frozen under the Phase 6 protocol.
 
 ## Run the checks
 
@@ -247,6 +225,7 @@ Rscript tests/smoke_test_visualise.R
 Rscript tests/smoke_test_challenge.R
 Rscript tests/smoke_test_failure_analysis.R
 Rscript tests/smoke_test_experiments.R
+Rscript tests/smoke_test_external_labels.R
 ```
 
 Optional analytical modules require:
@@ -255,54 +234,36 @@ Optional analytical modules require:
 install.packages(c("topicmodels", "syuzhet"))
 ```
 
-CI installs these packages and uploads rendered figures plus Phase 3–5 CSV artifacts when available.
+## Useful commands
 
-## Generate derived outputs
-
-Portfolio figures:
+Render sample portfolio figures:
 
 ```bash
 Rscript scripts/render_sample_outputs.R
 ```
 
-Challenge benchmark tables:
+Run challenge/failure/experiment reports:
 
 ```bash
 Rscript scripts/run_challenge_evaluation.R
-```
-
-Failure diagnosis and improvement queue:
-
-```bash
 Rscript scripts/run_failure_analysis.R
-```
-
-Controlled A/B/C experiment tables:
-
-```bash
 Rscript scripts/run_baseline_experiments.R
 ```
 
-The Phase 5 runner writes:
+When a real external-evaluation bundle exists locally:
 
-```text
-variant-settings.csv
-variant-summary.csv
-case-results.csv
-by-challenge-type.csv
-paired-comparison.csv
-paired-summary.csv
+```bash
+Rscript scripts/validate_external_evaluation.R \
+  data/external-evaluation/private/dataset-register.csv \
+  data/external-evaluation/private/annotations.csv \
+  data/external-evaluation/private/adjudicated-labels.csv
 ```
-
-Generated PNG/CSV outputs are ignored by Git so source history stays focused on code, fixtures, and documentation.
 
 ## Next evidence gate
 
-Do **not** tune another threshold or add more benchmark-specific rules against the same 12 authored cases.
+The project should now stop tuning against the 12 authored validation cases.
 
-The next meaningful phase is to define a labelling protocol and create a new independently labelled unseen dataset. It should support a primary category, optional secondary category / multi-label cases, explicit `Ambiguous` and `Unclassified` outcomes, short label rationales, and—where practical—independent annotation of a subset so disagreement can be measured.
-
-Only after that new test data are frozen should the project compare the retained A baseline with phrase-aware rules, broader lexical coverage, or a supervised/context-aware model.
+The next substantive work is **data collection and independent labelling**, not another benchmark-specific code rule. Once a new external set is frozen, compare the retained A baseline against any future phrase-aware or context-aware candidate exactly once for the external claim.
 
 ## Historical note
 
