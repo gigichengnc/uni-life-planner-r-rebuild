@@ -14,7 +14,7 @@ permissions:
 jobs:
   smoke-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -26,46 +26,83 @@ jobs:
           r-version: release
           use-public-rspm: true
 
-      - name: Install analysis dependencies
-        run: Rscript -e 'install.packages(c("topicmodels", "syuzhet"))'
+      - name: Install system dependencies for topicmodels
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev
+
+      - name: Install and verify analysis dependencies
+        id: dependencies
+        continue-on-error: true
+        run: |
+          Rscript -e 'install.packages(c("topicmodels", "syuzhet")); cat("R library paths:\n"); print(.libPaths()); cat("\nLoading topicmodels...\n"); library(topicmodels); cat("topicmodels loaded successfully\n"); cat("\nLoading syuzhet...\n"); library(syuzhet); cat("syuzhet loaded successfully\n"); cat("\nSession info:\n"); sessionInfo()'
 
       - name: Run Phase 2 foundation smoke test
+        id: foundation
+        continue-on-error: true
         run: Rscript tests/smoke_test_phase2.R
 
       - name: Run classification smoke test
+        id: classification
+        continue-on-error: true
         run: Rscript tests/smoke_test_classification.R
 
       - name: Run topic exploration smoke test
+        id: topics
+        continue-on-error: true
         run: Rscript tests/smoke_test_topics.R
 
       - name: Run sentiment smoke test
+        id: sentiment
+        continue-on-error: true
         run: Rscript tests/smoke_test_sentiment.R
 
       - name: Run recommendation smoke test
+        id: recommendations
+        continue-on-error: true
         run: Rscript tests/smoke_test_recommendations.R
 
       - name: Run visualisation smoke test
+        id: visualisation
+        continue-on-error: true
         run: Rscript tests/smoke_test_visualise.R
 
       - name: Run locked challenge benchmark smoke test
+        id: challenge
+        continue-on-error: true
         run: Rscript tests/smoke_test_challenge.R
 
       - name: Run failure-analysis smoke test
+        id: failure_analysis
+        continue-on-error: true
         run: Rscript tests/smoke_test_failure_analysis.R
 
       - name: Run controlled-experiment smoke test
+        id: experiments
+        continue-on-error: true
         run: Rscript tests/smoke_test_experiments.R
 
       - name: Run external-labelling protocol smoke test
+        id: external_labels
+        continue-on-error: true
         run: Rscript tests/smoke_test_external_labels.R
 
       - name: Render challenge benchmark tables
+        id: render_challenge
+        if: always()
+        continue-on-error: true
         run: Rscript scripts/run_challenge_evaluation.R output/examples/challenge
 
       - name: Render failure-analysis tables
+        id: render_failure_analysis
+        if: always()
+        continue-on-error: true
         run: Rscript scripts/run_failure_analysis.R output/examples/failure-analysis
 
       - name: Render controlled-experiment tables
+        id: render_experiments
+        if: always()
+        continue-on-error: true
         run: Rscript scripts/run_baseline_experiments.R output/examples/experiments
 
       - name: Upload rendered sample figures
@@ -99,3 +136,42 @@ jobs:
           name: phase5-controlled-experiments
           path: output/examples/experiments/*.csv
           if-no-files-found: warn
+
+      - name: Fail job if any required check failed
+        if: always()
+        env:
+          DEPENDENCIES: ${{ steps.dependencies.outcome }}
+          FOUNDATION: ${{ steps.foundation.outcome }}
+          CLASSIFICATION: ${{ steps.classification.outcome }}
+          TOPICS: ${{ steps.topics.outcome }}
+          SENTIMENT: ${{ steps.sentiment.outcome }}
+          RECOMMENDATIONS: ${{ steps.recommendations.outcome }}
+          VISUALISATION: ${{ steps.visualisation.outcome }}
+          CHALLENGE: ${{ steps.challenge.outcome }}
+          FAILURE_ANALYSIS: ${{ steps.failure_analysis.outcome }}
+          EXPERIMENTS: ${{ steps.experiments.outcome }}
+          EXTERNAL_LABELS: ${{ steps.external_labels.outcome }}
+          RENDER_CHALLENGE: ${{ steps.render_challenge.outcome }}
+          RENDER_FAILURE_ANALYSIS: ${{ steps.render_failure_analysis.outcome }}
+          RENDER_EXPERIMENTS: ${{ steps.render_experiments.outcome }}
+        run: |
+          failed=0
+          for name in \
+            DEPENDENCIES FOUNDATION CLASSIFICATION TOPICS SENTIMENT \
+            RECOMMENDATIONS VISUALISATION CHALLENGE FAILURE_ANALYSIS \
+            EXPERIMENTS EXTERNAL_LABELS RENDER_CHALLENGE \
+            RENDER_FAILURE_ANALYSIS RENDER_EXPERIMENTS
+          do
+            value="${!name}"
+            printf '%-28s %s\n' "$name" "$value"
+            if [ "$value" != "success" ]; then
+              failed=1
+            fi
+          done
+
+          if [ "$failed" -ne 0 ]; then
+            echo "One or more required CI checks failed. See the individual steps above."
+            exit 1
+          fi
+
+          echo "All required CI checks passed."
