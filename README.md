@@ -25,9 +25,9 @@ This is a retrospective reconstruction of **STAT 2610SEF Data Analytics with App
 | Historical baseline | Frozen under `original/` rather than silently rewritten |
 | Rebuilt pipeline | Loading, preprocessing, classification, topic exploration, sentiment, recommendation, visualisation, and evaluation are separate modules |
 | Reference classifier | Transparent five-category dictionary baseline with `Ambiguous` and `Unclassified` outcomes |
-| Validation | Clear synthetic fixtures plus a harder locked 12-case synthetic challenge benchmark |
-| Model-development decision | Retain Variant A; experimental negation/threshold variants did not show a net validation improvement |
-| Reproducibility | GitHub Actions runs the full smoke-test and reporting pipeline on a clean Ubuntu/R environment |
+| Validation | Five clear implementation fixtures plus a locked 12-case **self-authored synthetic validation** benchmark; neither is an external test |
+| Model-development decision | Retain Variant A as the simplest reference baseline; the 12-case exercise is not a statistically powered model-selection result |
+| Reproducibility | GitHub Actions runs on pull requests to `main` and pushes to `main` using R 4.6.1 and a dated 2026-08-20 CRAN snapshot |
 | External accuracy claim | **Not made**; a new independently labelled unseen dataset is still required |
 | Next evidence gate | Collect, independently label, adjudicate, freeze, and evaluate genuinely unseen reflections |
 
@@ -143,11 +143,13 @@ C  B + minimum top score 2 + ambiguity margin 1
 
 The repository definitions reproduce **8/12** correct validation decisions for A, B, and C. B changes no decisions; C fixes one case and regresses one case. The model-decision review therefore retains **Variant A** rather than promoting extra logic without net evidence of improvement.
 
+This is a **worked model-development and restraint example**, not a statistically powered model-selection study. The dictionary, synthetic cases, labels, and candidate variants were developed within the same project, so the 8/12 result should not be generalized beyond this validation exercise.
+
 See [`docs/model-decision-review.md`](docs/model-decision-review.md).
 
 ## Reproducibility
 
-The GitHub Actions workflow runs the complete required smoke-test and reporting pipeline, including:
+GitHub Actions runs the complete required smoke-test and reporting pipeline on pull requests targeting `main` and on pushes to `main`, including:
 
 - loading and preprocessing;
 - classification;
@@ -161,7 +163,9 @@ The GitHub Actions workflow runs the complete required smoke-test and reporting 
 - external-label protocol validation;
 - derived challenge/failure/experiment tables.
 
-On Ubuntu, the workflow also installs the GSL system dependency needed by `topicmodels` and verifies that analytical packages can be loaded before running the tests.
+The CI reference environment uses **Ubuntu 24.04**, **R 4.6.1**, and a **Posit Public Package Manager CRAN snapshot dated 2026-08-20**. It also installs the GSL system dependency needed by `topicmodels` and verifies `topicmodels` 0.2-17 and `syuzhet` 1.0.7 before running the tests.
+
+This is a pinned CI reference environment, not a complete container or OS-level lock. See [`docs/reproducibility.md`](docs/reproducibility.md) for the exact boundary.
 
 ### Run locally
 
@@ -226,7 +230,8 @@ Start here:
 - [`docs/failure-analysis.md`](docs/failure-analysis.md) — failure taxonomy and investigation queue;
 - [`docs/controlled-experiments.md`](docs/controlled-experiments.md) — experiment protocol;
 - [`docs/model-decision-review.md`](docs/model-decision-review.md) — why Variant A was retained;
-- [`docs/external-evaluation-protocol.md`](docs/external-evaluation-protocol.md) — requirements for a future unseen test set.
+- [`docs/external-evaluation-protocol.md`](docs/external-evaluation-protocol.md) — requirements for a future unseen test set;
+- [`docs/reproducibility.md`](docs/reproducibility.md) — pinned CI reference environment and what remains unpinned.
 
 ## Privacy and data governance
 
@@ -240,7 +245,7 @@ This repository demonstrates a more disciplined analysis workflow; it does **not
 
 Important limitations remain:
 
-- the challenge benchmark is synthetic and authored for this project;
+- the challenge benchmark is synthetic, self-authored, and used as project validation rather than independent test evidence;
 - the retained classifier is a transparent lexical baseline, not contextual language understanding;
 - LDA on a small corpus is exploratory and should not be treated as stable latent structure;
 - NRC sentiment is lexical description, not psychological inference;
@@ -255,3 +260,7 @@ The next substantive step is to collect new reflections, obtain at least two ind
 ## Historical preservation
 
 This is a retrospective learning repository. The `original/` directory preserves what was attempted at the end of Year 1; corrected code lives separately under `R/` so the learning history is visible rather than overwritten.
+
+## License
+
+Source code and project documentation authored for this repository are released under the [MIT License](LICENSE). This does not grant rights to third-party course materials or private student data; those are not published here by default.
