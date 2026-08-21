@@ -28,4 +28,11 @@ stopifnot(nrow(counts) > 0L)
 stopifnot(nrow(dtm) == 5L)
 stopifnot(!("the" %in% tokens$token))
 
+# Preserve compositional-language signals for future phrase-aware experiments.
+contrast_tokens <- tokenize_text("The experience felt reflective rather than competitive.")
+stopifnot(all(c("reflective", "rather", "than", "competitive") %in% contrast_tokens))
+
+negation_tokens <- tokenize_text("not no never without")
+stopifnot(all(c("not", "no", "never", "without") %in% negation_tokens))
+
 cat("Phase 2 foundation smoke test passed.\n")
