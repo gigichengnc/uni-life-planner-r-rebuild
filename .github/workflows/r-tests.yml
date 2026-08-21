@@ -3,7 +3,7 @@ name: R smoke tests
 on:
   push:
     branches:
-      - reconstruct-year1-project
+      - main
   pull_request:
     branches:
       - main
