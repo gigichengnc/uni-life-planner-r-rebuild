@@ -1,10 +1,21 @@
-# From Words to Programs: R-Based Student Reflection Analytics
+# Uni Life Planner — R Rebuild
 
-A retrospective reconstruction and redesign of a Year 1 project from **STAT 2610SEF Data Analytics with Applications (2025 Spring)**.
+**A reproducible reconstruction of a Year 1 R text-analytics project, rebuilt around transparent baselines, abstention, and explicit evidence boundaries.**
 
-The original **UNI LIFE PLANNER** asked a simple question: can student reflections on university activities be processed in R to identify interests, describe sentiment, and suggest future activities?
+The current project separates interest classification, topic exploration, sentiment description, recommendation, and evaluation instead of treating them as one model. The reference classifier is a five-category dictionary baseline that can return `Ambiguous` or `Unclassified` rather than forcing every reflection into a category.
 
-This repository preserves that original attempt under `original/` and rebuilds it as a modular, reproducible, and more statistically defensible R project.
+## Run it
+
+```bash
+Rscript tests/smoke_test_classification.R
+Rscript scripts/run_challenge_evaluation.R output/examples/challenge
+```
+
+Optional topic/sentiment modules require `topicmodels` and `syuzhet`.
+
+> **Evidence boundary:** the retained baseline reproduces **8/12** correct decisions on a locked synthetic challenge set. Those 12 authored cases are validation data, not an external test set, so this repository makes **no real-world accuracy claim**. The next evidence gate is independently labelled, genuinely unseen reflections.
+
+This is a retrospective reconstruction of **STAT 2610SEF Data Analytics with Applications (2025 Spring)**. The Year 1 attempt is preserved under `original/`; the corrected implementation lives separately under `R/`.
 
 ## Portfolio snapshot
 
