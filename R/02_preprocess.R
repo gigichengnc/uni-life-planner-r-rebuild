@@ -7,7 +7,7 @@ default_stopwords <- c(
   "a", "an", "and", "are", "as", "at", "be", "been", "being", "but",
   "by", "for", "from", "had", "has", "have", "he", "her", "hers", "him",
   "his", "i", "if", "in", "into", "is", "it", "its", "me", "my", "of",
-  "on", "or", "our", "ours", "she", "so", "than", "that", "the", "their",
+  "on", "or", "our", "ours", "she", "so", "that", "the", "their",
   "theirs", "them", "then", "there", "they", "this", "to", "too", "us",
   "was", "we", "were", "what", "when", "where", "which", "who", "will",
   "with", "you", "your", "yours"
